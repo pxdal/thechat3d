@@ -17,6 +17,10 @@ function createEnvironment(socket){
     entities: [],
     socket: socket,
     
+    testRequest: function(){
+    	this.socket.emit("testRequest", 10);
+    },
+    
     // Checks if entity exists in environment by id (returns true if available and false if taken)
     checkID: function(id){
     	let taken = false;
@@ -45,22 +49,23 @@ function createEnvironment(socket){
     
     // Fetches the cache for an entity by id
     fetchEntityCache: function(id){
-    	console.log("cache attempting fetch");
-      if( this.checkID(id) ){
-      	this.socket.emit("serverEntityCacheRequest", this.socket, id);
+      if( !this.checkID(id) ){
+      	console.log("cache attempting fetch");
+      	this.socket.emit("serverEntityCacheRequest", id);
       }
     },
     
     // Fetches the dynamic values for an entity by id
     fetchEntityDynamic: function(id){
-    	console.log("dynamic attemping fetch");
-    	if( this.checkID(id) ){
-    		this.socket.emit("serverEntityDynamicRequest", this.socket, id);
+    	if( !this.checkID(id) ){
+    		console.log("dynamic attemping fetch");
+    		this.socket.emit("serverEntityDynamicRequest", id);
     	}
     },
 		
 		// Callback for when the server sends an entity's id
 		serverEntityIDResponse: function(id){
+			console.log("received id response from server");
 			let entity = createEntity(id);
 			
 			this.pushEntity(entity); //note that this needs to be pushed first in order for getEntityByID to work in callback functions
@@ -101,8 +106,8 @@ function createEnvironment(socket){
     //initializes an entity (grabs values and pushes to array)
     initializeEntity: function(entity){
     	console.log("initialize entity has been called");
-    	this.fetchEntityCache(this.socket, entity.id);
-    	this.fetchEntityDynamic(this.socket, entity.id);
+    	this.fetchEntityCache(entity.id);
+    	this.fetchEntityDynamic(entity.id);
     }
   };
 }

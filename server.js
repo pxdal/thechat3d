@@ -32,6 +32,10 @@ io.on("connection", socket => {
   //Bind events
   socket.on("serverEntityCacheRequest", environment.serverEntityCacheRequest.bind(environment)); //make sure to bind all functions to environment so this calls aren't fucked up
   socket.on("serverEntityDynamicRequest", environment.serverEntityDynamicRequest.bind(environment));
+  
+  socket.on("testRequest", (int) => {
+  	console.log("test request received, " + int);
+  });
 });
 
 // server

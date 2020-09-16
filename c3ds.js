@@ -55,7 +55,7 @@ function createEnvironment(name){
     },
     
     //Callback for "serverEntityCacheRequest" event, which returns entity values for the client to cache
-    serverEntityCacheRequest: function(socket, id){
+    serverEntityCacheRequest: function(id){
     	console.log("received cache request from client");
       let entity = this.getEntityByID(id);
       let cache = entity.cache();
@@ -64,7 +64,7 @@ function createEnvironment(name){
     },
     
     //Callback for "serverEntityDynamicRequest" event, which returns dynamic values that are expected to change
-    serverEntityDynamicRequest: function(socket, id){
+    serverEntityDynamicRequest: function(id){
     	console.log("received dynamic request from client");
       let entity = this.getEntityByID(id);
       let dynamic = entity.dynamic();

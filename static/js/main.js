@@ -14,10 +14,8 @@ let far = 1000;
 
 init();
 
-
 // main
 animate();
-
 
 // methods
 function init(){
