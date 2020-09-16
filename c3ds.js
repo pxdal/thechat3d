@@ -34,23 +34,19 @@ function createEnvironment(name){
     },
     
     //pushes server entity to serverEntities, also checks if the id is taken
-    pushServerEntity: function(id){
-    	let entity = this.getEntityByID(id);
-    
-      if( this.checkID( serverEntity.id ) ){
-        this.serverEntities.push(serverEntity);
-        return "pushed entity with id: " + serverEntity.id;
+    pushServerEntity: function(entity){
+      if( this.checkID( entity.id ) ){
+        this.serverEntities.push(entity);
+        return "pushed entity with id: " + entity.id;
       } else {
         return "id taken";
       }
     },
     
     //pulls server entity from serverEntities
-    pullServerEntity: function(id){
-    	let entity = this.getEntityByID(id);
-    
-      this.serverEntities.splice( this.serverEntities.indexOf(serverEntity), 1 );
-      return "pulled entity with id: " + serverEntity.id;
+    pullServerEntity: function(entity){
+      this.serverEntities.splice( this.serverEntities.indexOf(entity), 1 );
+      return "pulled entity with id: " + entity.id;
     },
     
     //Sends the id of an entity to the client for initialization
@@ -64,6 +60,7 @@ function createEnvironment(name){
       let entity = this.getEntityByID(id);
       let cache = entity.cache();
       
+      console.log("sending cache response");
       socket.emit("serverEntityCacheResponse", cache, id);
     },
     
@@ -73,6 +70,7 @@ function createEnvironment(name){
       let entity = this.getEntityByID(id);
       let dynamic = entity.dynamic();
       
+      console.log("sending dynamic response");
       socket.emit("serverEntityDynamicResponse", dynamic, id);
     }
   };

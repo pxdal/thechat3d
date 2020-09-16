@@ -46,7 +46,7 @@ function createEnvironment(socket){
     // Fetches the cache for an entity by id
     fetchEntityCache: function(id){
       if( !this.checkID(id) ){
-      	console.log("cache attempting fetch");
+
       	this.socket.emit("serverEntityCacheRequest", id);
       }
     },
@@ -54,14 +54,12 @@ function createEnvironment(socket){
     // Fetches the dynamic values for an entity by id
     fetchEntityDynamic: function(id){
     	if( !this.checkID(id) ){
-    		console.log("dynamic attemping fetch");
     		this.socket.emit("serverEntityDynamicRequest", id);
     	}
     },
 		
 		// Callback for when the server sends an entity's id
 		serverEntityIDResponse: function(id){
-			console.log("received id response from server");
 			let entity = createEntity(id);
 			
 			this.pushEntity(entity); //note that this needs to be pushed first in order for getEntityByID to work in callback functions
@@ -70,7 +68,6 @@ function createEnvironment(socket){
 		
     // Callback for the serverEntityCacheResponse event, stores the values 
     serverEntityCacheResponse: function(cache, id){
-    	console.log("received a cache response from the server");
       let entity = this.getEntityByID(id);
       
       entity.cache(cache.material, cache.geometry);
@@ -78,17 +75,16 @@ function createEnvironment(socket){
     
     // Callback for the serverEntityDynamicResponse event, stores values
     serverEntityDynamicResponse: function(dynamic, id){
-    	console.log("received a dynamic response from the server");
     	let entity = this.getEntityByID(id);
     	
     	entity.dynamic(new Vector3(dynamic.x, dynamic.y, dynamic.z), new Euler(dynamic.rx, dynamic.ry, dynamic.rz));
+    	
+    	this.pushEntityToScene(entity.id);
     },
     
     // Pushes entity to entities
-    pushEntity: function(id){
-    	let entity = this.getEntityByID(id);
-    
-    	if(this.checkID(entity.id)){
+    pushEntity: function(entity){
+			if(this.checkID(entity.id)){
     		this.entities.push(entity);
     		return entity;
     	}
@@ -96,16 +92,17 @@ function createEnvironment(socket){
     },
     
     // Pulls entity from entities
-    pullEntity: function(id){
-    	let entity = this.getEntityByID(id);
-    	
-    	this.entities.splice(this.entities.indexOf(entity), 1);
+    pullEntity: function(entity){
+	    this.entities.splice(this.entities.indexOf(entity), 1);
     	return entity;
     },
     
     // Renders entity to scene
-    renderEntity: function(id){
+    pushEntityToScene: function(id){
+    	let entity = this.getEntityByID(id);
+    	let mesh = entity.mesh;
     	
+    	this.scene.add( mesh );
     },
     
     //initializes an entity (grabs values and pushes to array)

@@ -17,7 +17,7 @@ let stuff = {
 	position: new THREE.Vector3(1, 0, -5),
 	rotation: new THREE.Euler(0, 0, 0),
 	id: "logan",
-	material: new THREE.MeshBasicMaterial({color: 0x00ff00}),
+	material: 0x00ff00,
 	geometry: new THREE.BoxGeometry(),
 };
 
