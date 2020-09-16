@@ -17,10 +17,6 @@ function createEnvironment(socket){
     entities: [],
     socket: socket,
     
-    testRequest: function(){
-    	this.socket.emit("testRequest", 10);
-    },
-    
     // Checks if entity exists in environment by id (returns true if available and false if taken)
     checkID: function(id){
     	let taken = false;
@@ -89,7 +85,9 @@ function createEnvironment(socket){
     },
     
     // Pushes entity to entities
-    pushEntity: function(entity){
+    pushEntity: function(id){
+    	let entity = this.getEntityByID(id);
+    
     	if(this.checkID(entity.id)){
     		this.entities.push(entity);
     		return entity;
@@ -98,14 +96,20 @@ function createEnvironment(socket){
     },
     
     // Pulls entity from entities
-    pullEntity: function(entity){
+    pullEntity: function(id){
+    	let entity = this.getEntityByID(id);
+    	
     	this.entities.splice(this.entities.indexOf(entity), 1);
     	return entity;
     },
     
+    // Renders entity to scene
+    renderEntity: function(id){
+    	
+    },
+    
     //initializes an entity (grabs values and pushes to array)
     initializeEntity: function(entity){
-    	console.log("initialize entity has been called");
     	this.fetchEntityCache(entity.id);
     	this.fetchEntityDynamic(entity.id);
     }

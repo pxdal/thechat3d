@@ -24,7 +24,7 @@ function createEntity(id){
 		cache: function(material, geometry){
 			this.material = material;
 			this.geometry = geometry;
-			console.log("static values cached in entity, material color: " + this.material.color + ", geometry id: " + this.geometry.id);
+			console.log("static values cached in entity, material color: " + this.material.color + ", geometry id: " + this.geometry.uuid);
 		},
 		
 		//Takes in dynamic values

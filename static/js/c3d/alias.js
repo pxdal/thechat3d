@@ -7,6 +7,7 @@ let Scene = THREE.Scene,
     Vector2 = THREE.Vector2,
     Vector3 = THREE.Vector3,
     Vector4 = THREE.Vector4,
+    Euler = THREE.Euler,
     Mesh = THREE.Mesh,
     width = window.innerWidth,
     height = window.innerHeight;

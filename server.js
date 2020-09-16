@@ -29,13 +29,13 @@ io.on("connection", socket => {
   console.log("New socket connected"); //acknowledge existence of socket
   environment.sendServerEntityID(socket, logan);
   
-  //Bind events
-  socket.on("serverEntityCacheRequest", environment.serverEntityCacheRequest.bind(environment)); //make sure to bind all functions to environment so this calls aren't fucked up
-  socket.on("serverEntityDynamicRequest", environment.serverEntityDynamicRequest.bind(environment));
-  
-  socket.on("testRequest", (int) => {
-  	console.log("test request received, " + int);
+  //Bind events (have to be called in function to be able to add socket as a parameter
+  socket.on("serverEntityCacheRequest", (id) => {
+  	environment.serverEntityCacheRequest(socket, id); //make sure to bind all functions to environment so this calls aren't fucked up
   });
+  socket.on("serverEntityDynamicRequest", (id) => {
+  	environment.serverEntityDynamicRequest(socket, id);
+	});
 });
 
 // server
