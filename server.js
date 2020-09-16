@@ -21,8 +21,8 @@ let stuff = {
 	geometry: new THREE.BoxGeometry(),
 };
 
-let logan = createServerEntity(stuff.position, stuff.rotation, stuff.id, stuff.material, stuff.geometry);
-environment.pushEntity(logan);
+let logan = c3ds.createServerEntity(stuff.position, stuff.rotation, stuff.id, stuff.material, stuff.geometry);
+environment.pushServerEntity(logan);
 
 // socket
 io.on("connection", socket => {

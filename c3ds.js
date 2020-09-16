@@ -35,7 +35,7 @@ function createEnvironment(name){
     
     //pushes server entity to serverEntities, also checks if the id is taken
     pushServerEntity: function(serverEntity){
-      if( checkID( serverEntity.id ) ){
+      if( this.checkID( serverEntity.id ) ){
         this.serverEntities.push(serverEntity);
         return "pushed entity with id: " + serverEntity.id;
       } else {
@@ -56,18 +56,20 @@ function createEnvironment(name){
     
     //Callback for "serverEntityCacheRequest" event, which returns entity values for the client to cache
     serverEntityCacheRequest: function(socket, id){
+    	console.log("received cache request from client");
       let entity = this.getEntityByID(id);
       let cache = entity.cache();
       
-      socket.emit("serverEntityCacheResponse", cache);
+      socket.emit("serverEntityCacheResponse", cache, id);
     },
     
     //Callback for "serverEntityDynamicRequest" event, which returns dynamic values that are expected to change
     serverEntityDynamicRequest: function(socket, id){
+    	console.log("received dynamic request from client");
       let entity = this.getEntityByID(id);
       let dynamic = entity.dynamic();
       
-      socket.emit("serverEntityDynamicResponse", dynamic);
+      socket.emit("serverEntityDynamicResponse", dynamic, id);
     }
   };
 }

@@ -22,7 +22,7 @@ animate();
 // methods
 function init(){
   // environment
-  environment = createEnvironment();
+  environment = createEnvironment(socket);
   environment.scene.background = new THREE.Color( 0x000000 );
  
   // camera
@@ -57,7 +57,8 @@ function resize(){
 // bind event listeners
 
 //socket
-socket.on("serverEntityCacheResponse", environment.serverEntityCacheResponse.bind(environment)); //bind environment so "this" calls aren't screwed
+socket.on("serverEntityIDResponse", environment.serverEntityIDResponse.bind(environment)); //bind environment so "this" calls aren't screwed
+socket.on("serverEntityCacheResponse", environment.serverEntityCacheResponse.bind(environment));
 socket.on("serverEntityDynamicResponse", environment.serverEntityDynamicResponse.bind(environment));
 
 //window
