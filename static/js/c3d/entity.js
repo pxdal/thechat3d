@@ -21,21 +21,28 @@ function createEntity(id){
 		mesh: null,
 		
 		//Takes in cache values
-		cache: function(col, geometry){
-			this.material = new MeshBasicMaterial({color: col});
-			console.log(this.material);
+		cache: function(material, geometry){
+			this.material = new MeshBasicMaterial({color: material});
+
 			this.geometry = new BoxGeometry();
 			this.mesh = new Mesh( this.geometry, this.material );
-			console.log("static values cached in entity, material color: 0x" + zeroes(this.material.color.toString(16), 6) + ", geometry id: " + this.geometry.uuid);
+			console.log("static values cached in entity, material color: 0x" + this.material.color.getHexString() + ", geometry id: " + this.geometry.uuid);
 		},
 		
 		//Takes in dynamic values
 		dynamic: function(position, rotation){
-			this.position = position;
-			this.rotation = rotation;
-			this.mesh.position = this.position;
-			this.mesh.rotation = this.rotation;
-			console.log("dynamic values cached in entity, position: " + this.position.toArray() + ", rotation: " + this.rotation.toArray());
+			this.position = new Vector3(position.x, position.y, position.z);
+			this.rotation = new Euler(rotation.x, rotation.y, rotation.z);
+			this.mesh.position.setX(position.x);
+			this.mesh.position.setY(position.y);
+			this.mesh.position.setZ(position.z);
+			this.mesh.rotation.set(rotation.x, rotation.y, rotation.z);
+			console.log("dynamic values cached in entity, position: " + this.mesh.position.toArray() + ", rotation: " + this.mesh.rotation.toArray());
 		},
+		
+		//Whether the entity is ready to be pushed into the scene or not
+		ready: function(){
+			return (this.position !== null && this.rotation !== null && this.mesh !== null);
+		}
 	};
 }

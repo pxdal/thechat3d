@@ -34,6 +34,8 @@ function animate(){
   // call next frame
   requestAnimationFrame( animate );
   
+  environment.fetchEntityDynamic("logan");
+  
   // render the scene
   renderer.render( environment.scene, camera );
 }

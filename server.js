@@ -14,15 +14,34 @@ const io = socket(server);
 // main
 let environment = c3ds.createEnvironment("testEnvironment");
 let stuff = {
-	position: new THREE.Vector3(1, 0, -5),
-	rotation: new THREE.Euler(0, 0, 0),
+	position: {
+		x:  1, 
+		y:  0, 
+		z: -5
+	},
+	rotation: {
+		x: 0,
+		y: 0,
+		z: 0,
+	},
 	id: "logan",
 	material: 0x00ff00,
-	geometry: new THREE.BoxGeometry(),
+	geometry: "box",
 };
+
+let i = 0;
 
 let logan = c3ds.createServerEntity(stuff.position, stuff.rotation, stuff.id, stuff.material, stuff.geometry);
 environment.pushServerEntity(logan);
+
+setInterval(() => {
+	stuff.rotation.x = i;	
+	stuff.rotation.z = i;
+	
+	logan.rotation = stuff.rotation;
+	
+	i += 0.01;
+}, 17);
 
 // socket
 io.on("connection", socket => {

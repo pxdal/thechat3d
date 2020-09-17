@@ -77,7 +77,7 @@ function createEnvironment(socket){
     serverEntityDynamicResponse: function(dynamic, id){
     	let entity = this.getEntityByID(id);
     	
-    	entity.dynamic(new Vector3(dynamic.x, dynamic.y, dynamic.z), new Euler(dynamic.rx, dynamic.ry, dynamic.rz));
+    	entity.dynamic(dynamic.position, dynamic.rotation);
     	
     	this.pushEntityToScene(entity.id);
     },
@@ -102,7 +102,10 @@ function createEnvironment(socket){
     	let entity = this.getEntityByID(id);
     	let mesh = entity.mesh;
     	
-    	this.scene.add( mesh );
+    	if(entity.ready()){
+    		console.log("pushing mesh to scene");
+    		this.scene.add( mesh );
+    	}
     },
     
     //initializes an entity (grabs values and pushes to array)

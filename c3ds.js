@@ -101,12 +101,8 @@ function createServerEntity(position, rotation, id, material, geometry){
       
       //note that the vectors are turned into x, y, z values because it's not as big, so the server can send them faster
       return {
-      	x: entity.position.x,
-      	y: entity.position.y,
-      	z: entity.position.z,
-      	rx: entity.rotation.x,
-      	ry: entity.rotation.y,
-      	rz: entity.rotation.z
+      	position: entity.position,
+      	rotation: entity.rotation
       };
     },
   };
