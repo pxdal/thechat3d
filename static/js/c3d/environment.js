@@ -46,7 +46,6 @@ function createEnvironment(socket){
     // Fetches the cache for an entity by id
     fetchEntityCache: function(id){
       if( !this.checkID(id) ){
-
       	this.socket.emit("serverEntityCacheRequest", id);
       }
     },

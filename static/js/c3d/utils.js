@@ -15,3 +15,30 @@ function zeroes( string, width ){
 	
 	return zeroes + string;
 }
+
+//Attach the properties of child object to parent object, overwriting parent properties if child has them
+function attach(parent, child){
+	let ckeys = Object.keys(child);
+	let cvalues = Object.values(child);
+	
+	let pkeys = Object.keys(parent);
+	let pvalues = Object.values(parent);
+	
+	let final = {};
+	
+	for(let i = 0; i < pkeys.length; i++){
+		let key = pkeys[i];
+		let value = pvalues[i];
+		
+		final[key] = value; 
+	}
+	
+	for(let i = 0; i < ckeys.length; i++){
+		let key = ckeys[i];
+		let value = cvalues[i];
+		
+		final[key] = value;
+	}
+	
+	return final;
+}

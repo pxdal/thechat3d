@@ -46,3 +46,12 @@ function createEntity(id){
 		}
 	};
 }
+
+// Creates a client controllable entity from an already existing entity
+function clientEntity(entity){
+	let client = {
+		
+	};
+	
+	return attach(entity, client);
+}
