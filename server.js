@@ -10,6 +10,8 @@ const c3ds = require("./c3ds"); //"chat 3d server" module
 const app = express();
 const server = http.Server(app);
 const io = socket(server);
+let sockets = []; //stores sockets
+sockets.pull = pull;
 
 // main
 let environment = c3ds.createEnvironment("testEnvironment");
@@ -17,18 +19,24 @@ let environment = c3ds.createEnvironment("testEnvironment");
 // socket
 io.on("connection", socket => {
   console.log("New socket connected"); //acknowledge existence of socket
+	sockets.push(socket);
 	
   socket.on("clientReady", () => {
+  	// Send the client the server entities (excluding itself)
+		environment.sendEntities(socket);
+		
   	// Send the client an entity to bind to
 		let clientEntity = initClientEntity(socket);
+
 		socket.emit("clientEntityIDResponse", clientEntity.id);
 		
-		// Send the new entities to other clients
-		let sockets = io.sockets;
-		for(let i = 0; i < sockets; i++){
+		// Send the new client entity to the other sockets
+		for(let i = 0; i < sockets.length; i++){
 			let s = sockets[i];
 			
-			environment.sendEntities(socket);
+			if(s !== socket){
+				environment.sendServerEntityID(s, clientEntity);
+			}
 		}
 		
   });
@@ -42,13 +50,23 @@ io.on("connection", socket => {
   	environment.serverEntityDynamicRequest(socket, id);
 	});
 	
+	socket.on("clientInputRequest", (input) => {
+		environment.clientInputRequest(input, socket);
+	});
+	
 	socket.on("disconnect", (reason) => {
 		console.log("socket disconnect");
 		
-		if(reason == 'io server disconnect' || reason == 'ping timeout'){
-			socket.connect(); //if the client was kicked by the server, it attempts to relog the client and keeps the entity (this COULD be a risk because people could theoretically time themselves out repeatedly and then reconnect on a different client, until all entity ids are reserved.  this shouldn't be a problem rn tho)
-		} else {
-			environment.pullServerEntity(environment.getEntityBySocket.bind(environment)(socket)); //if the client intentionally disconnected, pull entity
+		let client = environment.getEntityBySocket.bind(environment)(socket);
+		
+		environment.pullServerEntity(client); //if the client intentionally disconnected, pull entity
+		
+		sockets.pull(socket);
+		
+		for(let i = 0; i < sockets.length; i++){
+			let s = sockets[i];
+			
+			s.emit("serverEntityPull", client.id);
 		}
 	});
 });
@@ -91,6 +109,13 @@ function randomCoords(mx, my, mz){
 		y: Math.floor(Math.random() * (my+1)) - my/2,
 		z: Math.floor(Math.random() * (mz+1)) - mz/2,
 	};
+}
+
+// pulls element from array (bind)
+function pull(element){
+	this.splice(this.indexOf(element), 1);
+	
+	return this;	
 }
 
 //inits a client entity

@@ -64,6 +64,10 @@ function createEnvironment(name){
     //Callback for "serverEntityDynamicRequest" event, which returns dynamic values that are expected to change
     serverEntityDynamicRequest: function(socket, id){
       let entity = this.getEntityByID(id);
+      if(entity == null){
+      	console.log("A dynamic request was made for an invalid entity: " + id);
+      	return null;
+      }
       let dynamic = entity.dynamic();
       
       socket.emit("serverEntityDynamicResponse", dynamic, id);
@@ -95,19 +99,38 @@ function createEnvironment(name){
     
     // Send server entities to socket (excluding the socket's entity, if it has one)
     sendEntities: function(socket){
-    	let client = this.serverEntities.indexOf(this.getEntityBySocket(socket));
-    	
-    	let entities = this.serverEntities.splice(client, 1);
-    	
-    	for(let i = 0; i < entities.length; i++){
-    		let entity = entities[i];
-    		
+    	for(let i = 0; i < this.serverEntities.length; i++){
+    		let entity = this.serverEntities[i];
+
     		this.sendServerEntityID(socket, entity);
     	}
-    }
+    },
+    
+    // Callback for clientInputRequest
+    clientInputRequest: function(input, socket){
+    	let entity = this.getEntityBySocket(socket);
+    	let speed = 0.06;
+    	let rotSpeed = 0.04;
+    	
+    	if(input[0]){
+    		entity.position.x -= speed * Math.sin(entity.rotation.y);
+    		entity.position.z -= speed * Math.cos(entity.rotation.y);
+    	}
+    	if(input[2]){
+    		entity.position.x += speed * Math.sin(entity.rotation.y);
+    		entity.position.z += speed * Math.cos(entity.rotation.y);
+    	}
+    	
+    	if(input[1]){
+    		entity.rotation.y += rotSpeed;
+    	}
+    	if(input[3]){
+    		entity.rotation.y -= rotSpeed;
+    	}
+    },
   };
 }
-    
+
 // creates a server entity
 function createServerEntity(position, rotation, id, material, geometry, socket){
   return {

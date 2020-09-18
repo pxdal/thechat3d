@@ -16,6 +16,7 @@ function createEnvironment(socket){
     scene: new Scene(), //creates the three.js scene where Object3Ds live
     entities: [],
     socket: socket,
+    clientEntity: null,
     
     // Checks if entity exists in environment by id (returns true if available and false if taken)
     checkID: function(id){
@@ -52,16 +53,17 @@ function createEnvironment(socket){
     
     // Fetches the dynamic values for an entity by id
     fetchEntityDynamic: function(id){
-    	if( !this.checkID(id) ){
+    	if( !this.checkID(id) || id == this.clientEntity.id){
     		this.socket.emit("serverEntityDynamicRequest", id);
     	}
     },
 		
 		// Callback for when an entity bound to the client is sent
-		clientEntityIDReponse: function(id, camera, self){
-			try {
-				self = clientEntity(createEntity(id), socket, camera);
-			} catch ( e ){}
+		clientEntityIDReponse: function(id, camera){
+			this.clientEntity = clientEntity(createEntity(id), socket, camera);
+			
+			this.clientEntity.initFps(window);
+			this.clientEntity.setCamera();
 		},
 		
 		// Callback for when the server sends an entity's id
@@ -81,11 +83,14 @@ function createEnvironment(socket){
     
     // Callback for the serverEntityDynamicResponse event, stores values
     serverEntityDynamicResponse: function(dynamic, id){
+    	if(id == this.clientEntity.id){
+				this.clientEntity.dynamic(dynamic.position, dynamic.rotation);
+				return;
+    	}
+    	
     	let entity = this.getEntityByID(id);
     	
     	entity.dynamic(dynamic.position, dynamic.rotation);
-    	
-    	this.pushEntityToScene(entity.id);
     },
     
     // Pushes entity to entities
@@ -100,6 +105,7 @@ function createEnvironment(socket){
     // Pulls entity from entities
     pullEntity: function(entity){
 	    this.entities.splice(this.entities.indexOf(entity), 1);
+    	
     	return entity;
     },
     
@@ -109,9 +115,19 @@ function createEnvironment(socket){
     	let mesh = entity.mesh;
     	
     	if(entity.ready()){
-    		console.log("pushing mesh to scene");
-    		this.scene.add( mesh );
-    	}
+				console.log("pushing mesh: " + entity.id + " to scene");
+				this.scene.add( mesh );
+			} else { console.log("attempted to push mesh to scene but the mesh isn't complete"); }
+    },
+    
+    // Removes entity from the scene
+    pullEntityFromScene: function(id){
+    	let entity = this.getEntityByID(id);
+    	let mesh = entity.mesh;
+    	
+    	this.scene.remove( mesh );
+    	
+    	entity.dispose(); //dispose of materials and geometries
     },
     
     //initializes an entity (grabs values and pushes to array)
@@ -120,11 +136,45 @@ function createEnvironment(socket){
     	this.fetchEntityDynamic(entity.id);
     },
     
+    // Updates the positions of entities
     update: function(){
     	for(let i = 0; i < this.entities.length; i++){
     		let entity = this.entities[i];
+
     		this.fetchEntityDynamic(entity.id);	
     	}
     },
+    
+    // Callback for when the server says an entity needs to be pulled
+    serverEntityPull: function(id){
+    	let e = this.getEntityByID(id);
+
+    	this.pullEntityFromScene(e.id);
+    	this.pullEntity(e);
+    },
+    
+    // checks if entities are pushed to the scene
+    checkScene: function(){
+    	for(let i = 0; i < this.entities.length; i++){
+    		let entity = this.entities[i];
+    		
+    		if(entity.ready){
+		  		if(!entity.scene && entity.ready()){
+		  	 		this.pushEntityToScene(entity.id);
+		  			entity.scene = true;
+		  		}
+		  	}
+    	}
+    },
+    
+    updateClient: function(){
+    	this.fetchEntityDynamic(this.clientEntity.id);
+    },
+    
+    requestInput: function(){
+    	let client = this.clientEntity;
+    	
+			this.socket.emit("clientInputRequest", client.input);
+		}
   };
 }

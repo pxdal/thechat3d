@@ -1,7 +1,5 @@
 "use strict";
 
-let self = {a: 0, b: 1}; //global client entity
-
 // socket
 const socket = io();
 
@@ -17,8 +15,8 @@ let far = 1000;
 init();
 
 // main
-clock.start();
-animate();
+//clock.start();
+//animate();
 
 // methods
 function init(){
@@ -49,32 +47,24 @@ function animate(){
   // call next frame
   requestAnimationFrame( animate );
   
-  // Check for input if a key is being pressed
-  if( Object.values(keys).includes(true) ){
-  	if(keys.KeyW){
-  		
-  	} else if(keys.KeyS){
-  	
-  	}
-  	
-  	if(keys.KeyA){
-  		
-  	} else if(keys.KeyD){
-  	
-  	}
+  environment.checkScene(); //adds entities to scene TODO make this not stupid
+  
+  environment.clientEntity.setCamera();
+  // if there is an input change request it
+  if(Object.values(keys).includes(true)){
+  	environment.clientEntity.bindInput(createInput(["KeyW", "KeyA", "KeyS", "KeyD"]));
+  	console.log("requesting input");
+  	environment.requestInput();
   }
   
-  try {
-		if(self.fps){
-			// updates camera
-			self.fps.update(delta);
-		}
-	} catch( e ) { console.warn("an entity hasn't been sent to the client yet"); }
-  
+  // Update fps controls
+	//environment.clientEntity.fps.update(delta);
+
   // render the scene
   renderer.render( environment.scene, camera );
 	
 	// fetch dynamic entity positions
+	environment.updateClient();
 	environment.update();
 	
 	// update stats
@@ -101,9 +91,9 @@ function resize(){
   camera.aspect = width/height;
   camera.updateProjectionMatrix();
   
-  if(self.fps){
+  if(environment.clientEntity.fps){
 		//Update fps controls
-		self.fps.handleResize();
+		environment.clientEntity.fps.handleResize();
 	}
 }
 
@@ -117,11 +107,15 @@ function unload(){
 socket.on("serverEntityIDResponse", environment.serverEntityIDResponse.bind(environment)); //bind environment so "this" calls aren't screwed
 socket.on("serverEntityCacheResponse", environment.serverEntityCacheResponse.bind(environment));
 socket.on("serverEntityDynamicResponse", environment.serverEntityDynamicResponse.bind(environment));
+socket.on("serverEntityPull", environment.serverEntityPull.bind(environment));
 socket.on("clientEntityIDResponse", (id) => {
-	environment.clientEntityIDReponse(id, camera, self);
+	environment.clientEntityIDReponse(id, camera);
+	clock.start();
+	animate();
 });
 
 //window
+window.addEventListener("unload", unload);
 window.addEventListener("resize", resize);
 
 
