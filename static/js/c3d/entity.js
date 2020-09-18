@@ -26,18 +26,18 @@ function createEntity(id){
 
 			this.geometry = new BoxGeometry();
 			this.mesh = new Mesh( this.geometry, this.material );
-			console.log("static values cached in entity, material color: 0x" + this.material.color.getHexString() + ", geometry id: " + this.geometry.uuid);
 		},
 		
 		//Takes in dynamic values
 		dynamic: function(position, rotation){
 			this.position = new Vector3(position.x, position.y, position.z);
 			this.rotation = new Euler(rotation.x, rotation.y, rotation.z);
-			this.mesh.position.setX(position.x);
-			this.mesh.position.setY(position.y);
-			this.mesh.position.setZ(position.z);
+			if(this.mesh){
+				this.mesh.position.setX(position.x);
+				this.mesh.position.setY(position.y);
+				this.mesh.position.setZ(position.z);
+			}
 			this.mesh.rotation.set(rotation.x, rotation.y, rotation.z);
-			console.log("dynamic values cached in entity, position: " + this.mesh.position.toArray() + ", rotation: " + this.mesh.rotation.toArray());
 		},
 		
 		//Whether the entity is ready to be pushed into the scene or not
@@ -48,9 +48,23 @@ function createEntity(id){
 }
 
 // Creates a client controllable entity from an already existing entity
-function clientEntity(entity){
+function clientEntity(entity, socket, camera){
 	let client = {
+		socket: socket,
+		input: [],
+		fps: new THREE.FirstPersonControls(camera, window), //fps controls (thank you so much three.js),
 		
+		material: undefined, //undefine these values because we won't need them (because we don't need to render self)
+		geometry: undefined,
+		
+		bindInput: function(input){
+			this.input = input;
+		},
+		
+		// Sends a request to the server to change entity position from input
+		requestInput: function(){
+			this.socket.emit("clientInputRequest", this.input);
+		},
 	};
 	
 	return attach(entity, client);

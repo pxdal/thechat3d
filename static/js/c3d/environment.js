@@ -57,6 +57,13 @@ function createEnvironment(socket){
     	}
     },
 		
+		// Callback for when an entity bound to the client is sent
+		clientEntityIDReponse: function(id, camera, self){
+			try {
+				self = clientEntity(createEntity(id), socket, camera);
+			} catch ( e ){}
+		},
+		
 		// Callback for when the server sends an entity's id
 		serverEntityIDResponse: function(id){
 			let entity = createEntity(id);
@@ -111,6 +118,13 @@ function createEnvironment(socket){
     initializeEntity: function(entity){
     	this.fetchEntityCache(entity.id);
     	this.fetchEntityDynamic(entity.id);
-    }
+    },
+    
+    update: function(){
+    	for(let i = 0; i < this.entities.length; i++){
+    		let entity = this.entities[i];
+    		this.fetchEntityDynamic(entity.id);	
+    	}
+    },
   };
 }
