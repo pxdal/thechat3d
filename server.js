@@ -15,6 +15,7 @@ sockets.pull = pull;
 
 // main
 let environment = c3ds.createEnvironment("testEnvironment");
+let chat = c3ds.createChat();
 
 // socket
 io.on("connection", socket => {
@@ -54,6 +55,17 @@ io.on("connection", socket => {
 		environment.clientInputRequest(input, socket);
 	});
 	
+	socket.on("clientUsername", (username) => {
+		let color = environment.getColor(socket);
+		
+		chat.clientUsername(username, color, socket);
+	});
+	
+	socket.on("clientNewMessage", (message) => {
+		chat.clientNewMessage(message, socket, sockets);
+	});
+	
+	
 	socket.on("disconnect", (reason) => {
 		console.log("socket disconnect");
 		
@@ -66,8 +78,11 @@ io.on("connection", socket => {
 		for(let i = 0; i < sockets.length; i++){
 			let s = sockets[i];
 			
+			console.log(client.id);
 			s.emit("serverEntityPull", client.id);
 		}
+		
+		
 	});
 });
 

@@ -128,7 +128,105 @@ function createEnvironment(name){
     		entity.rotation.y -= rotSpeed;
     	}
     },
+    
+    // Gets the color of the socket at the entity
+		getColor: function(socket){
+			let entity = this.getEntityBySocket(socket);
+			
+			return entity.material;
+		},
+		
   };
+}
+
+// Create a new chat manager (completely seperate from environment because there's really no reason to relate the two)
+function createChat(){
+	return {
+		users: [],
+		
+		clientUsername: function(un, color, socket){
+			let username = this.htmlEntities(un);
+			
+			if(username.length < 1){
+				socket.emit("serverPromptError", "You have to type something...reload to try again.  (if you did type something and you're seeing this, try not to use weird characters.");
+				return;
+			}
+			
+			this.pushUser( this.createUser(username, color, socket) );
+		},
+		
+		clientNewMessage: function(message, socket, sockets){
+			let user = this.getUserBySocket(socket);
+			message = this.htmlEntities(message);
+			
+			let content = {
+				username: user.username,
+				color: user.color,
+				message: message,
+			};
+			
+			
+		},
+		
+		// sends message to all sockets
+		sendMessage: function(content, sockets){
+			for(let i = 0; i < sockets.length; i++){
+				let s = sockets[i];
+				s.emit("serverNewMessage", content);
+			}
+		},
+			
+		pushUser: function(user){
+			this.users.push(user);
+		},
+		
+		pullUser: function(user){
+			this.users.splice(this.users.indexOf(user), 1);
+		},
+		
+		createUser: function(username, color, socket){
+			return {
+				username: username,
+				color: color,
+				socket: socket,
+			};
+		},
+		
+		// gets a user by the socket
+		getUserBySocket: function(socket){
+			for(let i = 0; i < this.users.length; i++){
+				let user = this.users[i];
+				
+				if(user.socket == socket){
+					return user;
+				}
+			}
+			
+			return null;
+		},
+				
+		// filters out special characters and replaces them with html entities (based off of the function made by the guy who fixed the chat)
+		htmlEntities: function(content){
+			return content.toString().replace(/&/g, "&#38;").replace(/</g, "&#60;").replace(/>/g, "&#62;").replace(/"/g, "&#34;").replace(/'/g, "&#39;").replace(/\//g, "&#47;").replace(/\\/g, "&#92;");
+		},
+		
+		// converts integer to hex
+		toHex: function( number ){
+			let str = number.toString();
+
+			let strw = str.length;
+			let padw = 6 - strw;
+
+			let zeroes = "";
+			
+			for(let i = 0; i < padw; i++){
+				zeroes += "0";
+			}
+			
+			return zeroes + str;
+		},
+		
+	};
 }
 
 // creates a server entity
@@ -168,4 +266,5 @@ function createServerEntity(position, rotation, id, material, geometry, socket){
 module.exports = {
   createServerEntity: createServerEntity,
   createEnvironment: createEnvironment,
+  createChat: createChat,
 };
