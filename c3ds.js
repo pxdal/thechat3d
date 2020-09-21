@@ -144,10 +144,8 @@ function createChat(){
 	return {
 		users: [],
 		
-		clientUsername: function(un, color, socket){
-			let username = this.htmlEntities(un);
-			
-			if(username.length < 1){
+		clientUsername: function(username, color, socket){
+			if(username.length < 1 || username == null){
 				socket.emit("serverPromptError", "You have to type something...reload to try again.  (if you did type something and you're seeing this, try not to use weird characters.");
 				return;
 			}
@@ -157,7 +155,6 @@ function createChat(){
 		
 		clientNewMessage: function(message, socket, sockets){
 			let user = this.getUserBySocket(socket);
-			message = this.htmlEntities(message);
 			
 			let content = {
 				username: user.username,
@@ -165,7 +162,9 @@ function createChat(){
 				message: message,
 			};
 			
+			console.log("User: [" + content.username + "] sent message: \"" + content.message + "\"");
 			
+			this.sendMessage(content, sockets);
 		},
 		
 		// sends message to all sockets
@@ -185,6 +184,8 @@ function createChat(){
 		},
 		
 		createUser: function(username, color, socket){
+			color = this.toHex(color); 
+			
 			return {
 				username: username,
 				color: color,
@@ -212,7 +213,7 @@ function createChat(){
 		
 		// converts integer to hex
 		toHex: function( number ){
-			let str = number.toString();
+			let str = number.toString(16);
 
 			let strw = str.length;
 			let padw = 6 - strw;

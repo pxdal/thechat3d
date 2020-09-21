@@ -11,7 +11,7 @@ const app = express();
 const server = http.Server(app);
 const io = socket(server);
 let sockets = []; //stores sockets
-sockets.pull = pull;
+sockets.pull = pull; //TODO this is stupid
 
 // main
 let environment = c3ds.createEnvironment("testEnvironment");
@@ -42,6 +42,33 @@ io.on("connection", socket => {
 		
   });
   
+  // Callback for when the socket gets disconnected
+  socket.on("disconnect", (reason) => {
+		console.log("socket disconnect");
+		
+		let client = environment.getEntityBySocket.bind(environment)(socket);
+		
+		environment.pullServerEntity(client); //if the client intentionally disconnected, pull entity
+		
+		sockets.pull(socket);
+		
+		let user = chat.getUserBySocket(socket);
+		
+		let userHasLeft = {
+			username: "The Chat Bot",
+			color: "ff0000",
+			message: "User [" + user.username + "] has foolishly left The Chat 3D.",
+		};
+		
+		chat.sendMessage(userHasLeft, sockets);
+					
+		for(let i = 0; i < sockets.length; i++){
+			let s = sockets[i];
+			
+			s.emit("serverEntityPull", client.id);
+		}
+	});
+	
   //Bind events (have to be called in function to be able to add socket as a parameter, TODO fix this stupid shortcut)
   socket.on("serverEntityCacheRequest", (id) => {
   	environment.serverEntityCacheRequest(socket, id); //make sure to bind all functions to environment so this calls aren't fucked up
@@ -64,26 +91,6 @@ io.on("connection", socket => {
 	socket.on("clientNewMessage", (message) => {
 		chat.clientNewMessage(message, socket, sockets);
 	});
-	
-	
-	socket.on("disconnect", (reason) => {
-		console.log("socket disconnect");
-		
-		let client = environment.getEntityBySocket.bind(environment)(socket);
-		
-		environment.pullServerEntity(client); //if the client intentionally disconnected, pull entity
-		
-		sockets.pull(socket);
-		
-		for(let i = 0; i < sockets.length; i++){
-			let s = sockets[i];
-			
-			console.log(client.id);
-			s.emit("serverEntityPull", client.id);
-		}
-		
-		
-	});
 });
 
 // server
@@ -100,15 +107,15 @@ function disconnect(reason){
 
 // utils (that I couldn't bother putting into another file)
 function initServer(){
-  app.set('port', 8080);
+  app.set('port', 80);
   app.use("/static/", express.static(__dirname + "/static"));
   
   app.get("/", (req, res) => {
     res.sendFile(path.join(__dirname, "index.html"));
   });
   
-  server.listen(8080, () => {
-    console.log("server started");
+  server.listen(80, '0.0.0.0', () => {
+    console.log("server open, listening");
   });
 }
 

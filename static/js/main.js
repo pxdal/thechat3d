@@ -60,13 +60,17 @@ function animate(){
   // if there is an input change request it
   if(Object.values(keys).includes(true)){
   	environment.clientEntity.bindInput(createInput(["KeyW", "KeyA", "KeyS", "KeyD"]));
-  	environment.requestInput();
+  	
+  	if(document.activeElement !== chat.input) environment.requestInput();
   	
   	//TODO make this less unintuitive
   	if(keys.KeyT){
   		chat.input.focus();
   	}
+
   	if(keys.Enter){
+  		if(document.activeElement !== chat.input) return;
+  		
   		chat.input.blur();
   		
   		if(chat.username !== null){
