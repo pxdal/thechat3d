@@ -64,6 +64,7 @@ function createEnvironment(name){
     //Callback for "serverEntityDynamicRequest" event, which returns dynamic values that are expected to change
     serverEntityDynamicRequest: function(socket, id){
       let entity = this.getEntityByID(id);
+      
       if(entity == null){
       	console.log("A dynamic request was made for an invalid entity: " + id);
       	return null;
@@ -145,12 +146,15 @@ function createChat(){
 		users: [],
 		
 		clientUsername: function(username, color, socket){
-			if(username.length < 1 || username == null){
+			if(username == null){
+				socket.emit("serverPromptError", "You have to type something...reload to try again.  (if you did type something and you're seeing this, try not to use weird characters.");
+				return null;
+			} else if(username.length < 1){
 				socket.emit("serverPromptError", "You have to type something...reload to try again.  (if you did type something and you're seeing this, try not to use weird characters.");
 				return;
 			}
 			
-			this.pushUser( this.createUser(username, color, socket) );
+			return this.pushUser( this.createUser(username, color, socket) );
 		},
 		
 		clientNewMessage: function(message, socket, sockets){
@@ -177,6 +181,7 @@ function createChat(){
 			
 		pushUser: function(user){
 			this.users.push(user);
+			return user;
 		},
 		
 		pullUser: function(user){

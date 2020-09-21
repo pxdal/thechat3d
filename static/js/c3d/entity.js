@@ -91,8 +91,7 @@ function clientEntity(entity, socket, camera){
 		
 		bindInput: function(input){
 			this.input = input;
-		},
-		
+		},		
 };
 	
 	return attach(entity, client);

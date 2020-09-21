@@ -20,6 +20,7 @@ let chat = c3ds.createChat();
 // socket
 io.on("connection", socket => {
   console.log("New socket connected"); //acknowledge existence of socket
+	
 	sockets.push(socket);
 	
   socket.on("clientReady", () => {
@@ -54,14 +55,16 @@ io.on("connection", socket => {
 		
 		let user = chat.getUserBySocket(socket);
 		
-		let userHasLeft = {
-			username: "The Chat Bot",
-			color: "ff0000",
-			message: "User [" + user.username + "] has foolishly left The Chat 3D.",
-		};
-		
-		chat.sendMessage(userHasLeft, sockets);
-					
+		if(user !== null){
+			let userHasLeft = {
+				username: "The Chat Bot",
+				color: "ff0000",
+				message: "User [" + user.username + "] has foolishly left The Chat 3D.",
+			};
+			
+			chat.sendMessage(userHasLeft, sockets);
+		}
+				
 		for(let i = 0; i < sockets.length; i++){
 			let s = sockets[i];
 			
@@ -86,6 +89,15 @@ io.on("connection", socket => {
 		let color = environment.getColor(socket);
 		
 		chat.clientUsername(username, color, socket);
+		
+		let newUserJoined = {
+			username: "The Chat Bot",
+			color: "ff0000",
+			message: "User [" + username + "] has joined The Chat 3D.",
+		};
+		
+		chat.sendMessage(newUserJoined, sockets);
+		
 	});
 	
 	socket.on("clientNewMessage", (message) => {

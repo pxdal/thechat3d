@@ -44,9 +44,7 @@ function createChat(socket){
 			let username = content.username;
 			let color = content.color;
 			let message = content.message;
-			
-			console.log(color);
-			
+
 			let contentElement = this.initContentElement(username, color, message); //paragraph element appended to div
 
 			this.appendContent(contentElement);

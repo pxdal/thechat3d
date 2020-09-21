@@ -117,10 +117,10 @@ function resize(){
   camera.aspect = width/height;
   camera.updateProjectionMatrix();
   
-  if(environment.clientEntity.fps){
+  /*if(environment.clientEntity.fps){
 		//Update fps controls
 		environment.clientEntity.fps.handleResize();
-	}
+	}*/
 }
 
 function unload(){
@@ -140,6 +140,7 @@ socket.on("serverEntityDynamicResponse", environment.serverEntityDynamicResponse
 socket.on("serverEntityPull", environment.serverEntityPull.bind(environment));
 socket.on("serverNewMessage", chat.serverNewMessage.bind(chat));
 socket.on("clientEntityIDResponse", (id) => {
+	console.log("client id: " + id);
 	environment.clientEntityIDReponse(id, camera);
 	clock.start();
 	animate();

@@ -46,16 +46,16 @@ function createEnvironment(socket){
     
     // Fetches the cache for an entity by id
     fetchEntityCache: function(id){
-      if( !this.checkID(id) ){
+      
       	this.socket.emit("serverEntityCacheRequest", id);
-      }
+    	
     },
     
     // Fetches the dynamic values for an entity by id
     fetchEntityDynamic: function(id){
-    	if( !this.checkID(id) || id == this.clientEntity.id){
+    	
     		this.socket.emit("serverEntityDynamicRequest", id);
-    	}
+    	
     },
 		
 		// Callback for when an entity bound to the client is sent
@@ -140,7 +140,7 @@ function createEnvironment(socket){
     update: function(){
     	for(let i = 0; i < this.entities.length; i++){
     		let entity = this.entities[i];
-
+				
     		this.fetchEntityDynamic(entity.id);	
     	}
     },
