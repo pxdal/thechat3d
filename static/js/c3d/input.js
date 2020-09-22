@@ -24,6 +24,11 @@ function createInput(codes){
 	return out;
 }
 
+// returns boolean which says whether or not key is pressed
+function keyPressed(){
+	return Object.values(keys).includes(true);
+}
+
 // bind events
 window.addEventListener("keyup", keyup);
 window.addEventListener("keydown", keydown);

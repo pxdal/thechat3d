@@ -12,11 +12,8 @@ let aspect = window.innerWidth / window.innerHeight;
 let near = 0.1;
 let far = 1000;
 
-init();
-
 // main
-//clock.start();
-//animate();
+init();
 
 // methods
 function init(){
@@ -56,31 +53,16 @@ function animate(){
   
   environment.checkScene(); //adds entities to scene TODO make this not stupid
   
-  environment.clientEntity.setCamera();
+  environment.clientEntity.setCamera(); // sets the camera's position
+  
   // if there is an input change request it
-  if(Object.values(keys).includes(true)){
+  if( keyPressed() ){
   	environment.clientEntity.bindInput(createInput(["KeyW", "KeyA", "KeyS", "KeyD"]));
   	
   	if(document.activeElement !== chat.input) environment.requestInput();
   	
-  	//TODO make this less unintuitive
-  	if(keys.KeyT){
-  		chat.input.focus();
-  	}
-
-  	if(keys.Enter){
-  		if(document.activeElement !== chat.input) return;
-  		
-  		chat.input.blur();
-  		
-  		if(chat.username !== null){
-  			chat.newMessage();
-  		}
-  	}
+  	chat.handleInput();
   }
-  
-  // Update fps controls (not active rn)
-	//environment.clientEntity.fps.update(delta);
 
   // render the scene
   renderer.render( environment.scene, camera );
@@ -116,35 +98,32 @@ function resize(){
   //update camera
   camera.aspect = width/height;
   camera.updateProjectionMatrix();
-  
-  /*if(environment.clientEntity.fps){
-		//Update fps controls
-		environment.clientEntity.fps.handleResize();
-	}*/
 }
 
 function unload(){
 	renderer.dispose();
 }
 
+function serverPromptError(error){
+	alert(error);
+}
+
+function clientEntityIDResponse(id){
+	environment.clientEntityIDResponse(id, camera);
+	clock.start();
+	animate();	
+}
+
 // bind event listeners
 
 //socket
-socket.on("serverPromptError", (error) => {
-	alert(error);
-});
-
+socket.on("serverPromptError", serverPromptError);
 socket.on("serverEntityIDResponse", environment.serverEntityIDResponse.bind(environment)); //bind environment so "this" calls aren't screwed
 socket.on("serverEntityCacheResponse", environment.serverEntityCacheResponse.bind(environment));
 socket.on("serverEntityDynamicResponse", environment.serverEntityDynamicResponse.bind(environment));
 socket.on("serverEntityPull", environment.serverEntityPull.bind(environment));
 socket.on("serverNewMessage", chat.serverNewMessage.bind(chat));
-socket.on("clientEntityIDResponse", (id) => {
-	console.log("client id: " + id);
-	environment.clientEntityIDReponse(id, camera);
-	clock.start();
-	animate();
-});
+socket.on("clientEntityIDResponse", clientEntityIDResponse);
 
 //window
 window.addEventListener("unload", unload);

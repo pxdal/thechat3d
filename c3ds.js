@@ -6,6 +6,73 @@ function createEnvironment(name){
     name: name, //optional name, more decorational than anything
     serverEntities: [], //all entities in the scene
     
+    
+    // REQUEST HANDLE METHODS //
+    
+    //Callback for "serverEntityCacheRequest" event, which returns entity values for the client to cache
+    serverEntityCacheRequest: function(socket, id){
+      let entity = this.getEntityByID(id);
+      let cache = entity.cache();
+      
+      socket.emit("serverEntityCacheResponse", cache, id);
+    },
+    
+    //Callback for "serverEntityDynamicRequest" event, which returns dynamic values that are expected to change
+    serverEntityDynamicRequest: function(socket, id){
+      let entity = this.getEntityByID(id);
+      
+      if(entity == null){
+      	console.log("A dynamic request was made for an invalid entity: " + id);
+      	return null;
+      }
+      let dynamic = entity.dynamic();
+      
+      socket.emit("serverEntityDynamicResponse", dynamic, id);
+    },
+           
+    // Callback for clientInputRequest
+    clientInputRequest: function(input, socket){
+    	let entity = this.getEntityBySocket(socket);
+    	let speed = 0.06;
+    	let rotSpeed = 0.04;
+    	
+    	if(input[0]){
+    		entity.position.x -= speed * Math.sin(entity.rotation.y);
+    		entity.position.z -= speed * Math.cos(entity.rotation.y);
+    	}
+    	if(input[2]){
+    		entity.position.x += speed * Math.sin(entity.rotation.y);
+    		entity.position.z += speed * Math.cos(entity.rotation.y);
+    	}
+    	
+    	if(input[1]){
+    		entity.rotation.y += rotSpeed;
+    	}
+    	if(input[3]){
+    		entity.rotation.y -= rotSpeed;
+    	}
+    },
+    
+    
+    // SENDERS //
+    
+    //Sends the id of an entity to the client for initialization
+    sendServerEntityID: function(socket, entity){
+    	socket.emit("serverEntityIDResponse", entity.id);
+    },
+    
+    // Send server entities to socket
+    sendEntities: function(socket){
+    	for(let i = 0; i < this.serverEntities.length; i++){
+    		let entity = this.serverEntities[i];
+
+    		this.sendServerEntityID(socket, entity);
+    	}
+    },
+    
+    
+    // UTILS //
+    
     //returns entity with the id specified
     getEntityByID: function(id){
       for(let i = 0; i < this.serverEntities.length; i++){
@@ -48,32 +115,6 @@ function createEnvironment(name){
       return "pulled entity with id: " + entity.id;
     },
     
-    //Sends the id of an entity to the client for initialization
-    sendServerEntityID: function(socket, entity){
-    	socket.emit("serverEntityIDResponse", entity.id);
-    },
-    
-    //Callback for "serverEntityCacheRequest" event, which returns entity values for the client to cache
-    serverEntityCacheRequest: function(socket, id){
-      let entity = this.getEntityByID(id);
-      let cache = entity.cache();
-      
-      socket.emit("serverEntityCacheResponse", cache, id);
-    },
-    
-    //Callback for "serverEntityDynamicRequest" event, which returns dynamic values that are expected to change
-    serverEntityDynamicRequest: function(socket, id){
-      let entity = this.getEntityByID(id);
-      
-      if(entity == null){
-      	console.log("A dynamic request was made for an invalid entity: " + id);
-      	return null;
-      }
-      let dynamic = entity.dynamic();
-      
-      socket.emit("serverEntityDynamicResponse", dynamic, id);
-    },
-    
     // generates a unique id for a new entity between 0 and 999
     generateID: function(){
     	let id;
@@ -98,38 +139,6 @@ function createEnvironment(name){
 			return null;
     },
     
-    // Send server entities to socket (excluding the socket's entity, if it has one)
-    sendEntities: function(socket){
-    	for(let i = 0; i < this.serverEntities.length; i++){
-    		let entity = this.serverEntities[i];
-
-    		this.sendServerEntityID(socket, entity);
-    	}
-    },
-    
-    // Callback for clientInputRequest
-    clientInputRequest: function(input, socket){
-    	let entity = this.getEntityBySocket(socket);
-    	let speed = 0.06;
-    	let rotSpeed = 0.04;
-    	
-    	if(input[0]){
-    		entity.position.x -= speed * Math.sin(entity.rotation.y);
-    		entity.position.z -= speed * Math.cos(entity.rotation.y);
-    	}
-    	if(input[2]){
-    		entity.position.x += speed * Math.sin(entity.rotation.y);
-    		entity.position.z += speed * Math.cos(entity.rotation.y);
-    	}
-    	
-    	if(input[1]){
-    		entity.rotation.y += rotSpeed;
-    	}
-    	if(input[3]){
-    		entity.rotation.y -= rotSpeed;
-    	}
-    },
-    
     // Gets the color of the socket at the entity
 		getColor: function(socket){
 			let entity = this.getEntityBySocket(socket);
@@ -145,6 +154,10 @@ function createChat(){
 	return {
 		users: [],
 		
+		
+		// CLIENT //
+		
+		// Callback for when the chat receives a username request
 		clientUsername: function(username, color, socket){
 			if(username == null){
 				socket.emit("serverPromptError", "You have to type something...reload to try again.  (if you did type something and you're seeing this, try not to use weird characters.");
@@ -157,6 +170,7 @@ function createChat(){
 			return this.pushUser( this.createUser(username, color, socket) );
 		},
 		
+		// Callback for when a client sends a new message
 		clientNewMessage: function(message, socket, sockets){
 			let user = this.getUserBySocket(socket);
 			
@@ -178,16 +192,22 @@ function createChat(){
 				s.emit("serverNewMessage", content);
 			}
 		},
+		
+		
+		// UTILS //
+		
+		// Creates a new server message and sends it out to all sockets
+		createMessage: function(username, color, message, sockets){
+			let content = {
+				username: username,
+				color: color,
+				message: message,
+			};
 			
-		pushUser: function(user){
-			this.users.push(user);
-			return user;
+			this.sendMessage(content, sockets);
 		},
 		
-		pullUser: function(user){
-			this.users.splice(this.users.indexOf(user), 1);
-		},
-		
+		// creates a user
 		createUser: function(username, color, socket){
 			color = this.toHex(color); 
 			
@@ -196,6 +216,17 @@ function createChat(){
 				color: color,
 				socket: socket,
 			};
+		},
+		
+		// pushes a user to users
+		pushUser: function(user){
+			this.users.push(user);
+			return user;
+		},
+		
+		// pulls a user from users
+		pullUser: function(user){
+			this.users.splice(this.users.indexOf(user), 1);
 		},
 		
 		// gets a user by the socket

@@ -11,7 +11,6 @@ client = --data--
 
 // Creates an empty entity, with the exception of it's id
 function createEntity(id){
-	console.log("creating entity with id: " + id);
 	return {
 		position: null,
 		rotation: null,
@@ -63,7 +62,6 @@ function clientEntity(entity, socket, camera){
 	let client = {
 		socket: socket,
 		input: [],
-		fps: null, //fps controls (thank you so much three.js),
 		camera: camera,
 		
 		material: undefined, //undefine these values because we won't need them (because we don't need to render self)
@@ -77,16 +75,6 @@ function clientEntity(entity, socket, camera){
 				
 				this.camera.rotation.set(this.rotation.x, this.rotation.y, this.rotation.z);
 			}
-		},
-		
-		initFps: function(domElement){
-			this.fps = new FirstPersonControls(this.camera, domElement);
-			this.fps.lookSpeed = 0.4;
-			this.fps.movementSpeed = 20;
-			this.fps.lookVertical = true;
-			this.fps.contrainVertical = true;
-			this.fps.verticalMin = 1.0;
-			this.fps.verticalmax = 2.0;
 		},
 		
 		bindInput: function(input){

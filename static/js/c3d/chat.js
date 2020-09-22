@@ -2,9 +2,9 @@
 
 function createChat(socket){
 	return {
-		domElement: document.createElement("div"),
-		messageBoxElement: document.createElement("div"),
-		input: document.createElement("input"),
+		domElement: document.createElement("div"), //main dom element
+		messageBoxElement: document.createElement("div"), //message box element
+		inputElement: document.createElement("input"), //input element
 		username: null, //client username 
 		socket: socket,
 		
@@ -17,10 +17,10 @@ function createChat(socket){
 		
 		// Initializes the input text box
 		initInput: function(){
-			this.input.type = "text";
-			this.input.autocomplete = "off";
-			this.input.placeholder = "type t to chat";
-			this.input.style.position = "static";
+			this.inputElement.type = "text";
+			this.inputElement.autocomplete = "off";
+			this.inputElement.placeholder = "type t to chat";
+			this.inputElement.style.position = "static";
 		},
 		
 		// initializes the dom element, and appends it to domElement
@@ -33,7 +33,7 @@ function createChat(socket){
 			this.messageBoxElement.style.overflow = "auto";
 			this.messageBoxElement.style.width = this.domElement.style.width;
 			this.messageBoxElement.style.height = "100%";
-			this.domElement.appendChild(this.input);
+			this.domElement.appendChild(this.inputElement);
 			this.domElement.appendChild(this.messageBoxElement);
 		
 			dom.appendChild(this.domElement);
@@ -54,15 +54,16 @@ function createChat(socket){
 		
 		// gets data from this.input and sends it to the server
 		newMessage: function(){
-			let message = this.input.value;
+			let message = this.inputElement.value;
 			
 			if(message.length < 1) return;
 			
-			this.input.value = "";
+			this.inputElement.value = "";
 			
 			this.socket.emit("clientNewMessage", message);
 		},
 		
+		// Initializes a message element to be appended to message box
 		initContentElement: function(username, color, message){
 			let contentElement = document.createElement("div");
 			let messageElement = document.createElement("span");
@@ -80,5 +81,21 @@ function createChat(socket){
 		appendContent: function(contentElement){
 			this.messageBoxElement.appendChild(contentElement);
 		},
+		
+		handleInput: function(input){
+			if(input.KeyT){
+				this.inputElement.focus();
+			}
+
+			if(input.Enter){
+				if(document.activeElement !== this.inputElement) return;
+				
+				this.inputElement.blur();
+				
+				if(this.username !== null){
+					this.newMessage();
+				}
+			}
+		}
 	};
 }
