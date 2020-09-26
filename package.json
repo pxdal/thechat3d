@@ -1,6 +1,6 @@
 {
   "name": "thechat3d",
-  "version": "0.1.0",
+  "version": "1.0.0-alpha",
   "description": "The Chat's super cool cousin, The Chat 3D",
   "main": "index.js",
   "scripts": {
@@ -11,7 +11,6 @@
   "license": "ISC",
   "dependencies": {
     "express": "^4.17.1",
-    "socket.io": "^2.3.0",
-    "three.js": "^0.77.1"
+    "socket.io": "^2.3.0"
   }
 }

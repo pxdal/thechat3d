@@ -5,6 +5,7 @@ function createChat(socket){
 		domElement: document.createElement("div"), //main dom element
 		messageBoxElement: document.createElement("div"), //message box element
 		inputElement: document.createElement("input"), //input element
+		debugElement: document.createElement("span"), //debug element
 		username: null, //client username 
 		socket: socket,
 		
@@ -33,13 +34,25 @@ function createChat(socket){
 			this.messageBoxElement.style.overflow = "auto";
 			this.messageBoxElement.style.width = this.domElement.style.width;
 			this.messageBoxElement.style.height = "100%";
+			this.debugElement.style.color = "white";
+			this.debugElement.style.position = "absolute";
+			this.debugElement.style.left = "285px";
+			this.debugElement.style.top = "5px";
+			this.debugElement.style.visibility = "hidden";
 			this.domElement.appendChild(this.inputElement);
 			this.domElement.appendChild(this.messageBoxElement);
-		
+			
+			dom.appendChild(this.debugElement);
+					
 			dom.appendChild(this.domElement);
 		},
 		
-		//Callback for when a message is received from the server
+		// Update debug elememt
+		updateDebug: function(x, y, z){
+			this.debugElement.textContent = "x: " + x.toFixed(2) + ", y: " + y.toFixed(2) + ", z: " + z.toFixed(2);
+		},
+		
+		// Callback for when a message is received from the server
 		serverNewMessage: function(content){
 			let username = content.username;
 			let color = content.color;

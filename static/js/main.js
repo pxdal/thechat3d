@@ -3,6 +3,9 @@
 // socket
 const socket = io();
 
+// whether or not to display debug info
+let debug = true; //defaults to false
+
 // environment/camera/renderer
 let environment, chat, camera, renderer, stats, clock;
 
@@ -44,6 +47,7 @@ function init(){
   chat.setUsername();
 }
 
+// called every frame
 function animate(){
 	// set delta
 	let delta = clock.getDelta();
@@ -59,9 +63,9 @@ function animate(){
   if( keyPressed() ){
   	environment.clientEntity.bindInput(createInput(["KeyW", "KeyA", "KeyS", "KeyD"]));
   	
-  	if(document.activeElement !== chat.input) environment.requestInput();
+  	if(document.activeElement !== chat.inputElement) environment.requestInput();
   	
-  	chat.handleInput();
+  	chat.handleInput(keys);
   }
 
   // render the scene
@@ -70,6 +74,17 @@ function animate(){
 	// fetch dynamic entity positions
 	environment.updateClient();
 	environment.update();
+	
+	// debug
+	if(debug){ 
+		chat.debugElement.style.visibility = "visible";
+	} else {
+		chat.debugElement.style.visibility = "hidden";
+	}
+	
+	if(environment.clientEntity.position !== null){
+		chat.updateDebug(environment.clientEntity.position.x, environment.clientEntity.position.y, environment.clientEntity.position.z);
+	}
 	
 	// update stats
 	stats.update();

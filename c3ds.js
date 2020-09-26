@@ -71,6 +71,18 @@ function createEnvironment(name){
     },
     
     
+    // UPDATE METHODS (run every frame)//
+		
+		// updates every entity's position
+		update: function(){
+			for(let i = 0; i < this.serverEntities.length; i++){
+				let entity = this.serverEntities[i];
+				
+				entity.update();
+			}
+		},
+		
+    
     // UTILS //
     
     //returns entity with the id specified
@@ -111,6 +123,8 @@ function createEnvironment(name){
     
     //pulls server entity from serverEntities
     pullServerEntity: function(entity){
+    	if(entity == null) return;
+    	
       this.serverEntities.splice( this.serverEntities.indexOf(entity), 1 );
       return "pulled entity with id: " + entity.id;
     },
@@ -143,6 +157,8 @@ function createEnvironment(name){
 		getColor: function(socket){
 			let entity = this.getEntityBySocket(socket);
 			
+			if(entity == null) return 0;
+			
 			return entity.material;
 		},
 		
@@ -158,7 +174,7 @@ function createChat(){
 		// CLIENT //
 		
 		// Callback for when the chat receives a username request
-		clientUsername: function(username, color, socket){
+		clientUsername: function(username, color, socket, sockets){
 			if(username == null){
 				socket.emit("serverPromptError", "You have to type something...reload to try again.  (if you did type something and you're seeing this, try not to use weird characters.");
 				return null;
@@ -166,6 +182,12 @@ function createChat(){
 				socket.emit("serverPromptError", "You have to type something...reload to try again.  (if you did type something and you're seeing this, try not to use weird characters.");
 				return;
 			}
+			
+			let tcb = this.getUserByUsername("The Chat Bot");
+			
+			this.createMessage(tcb.username, tcb.color, "User [" + username + "] has joined The Chat 3D", sockets);
+			
+			console.log("User: [" + username + "] has joined");
 			
 			return this.pushUser( this.createUser(username, color, socket) );
 		},
@@ -241,7 +263,20 @@ function createChat(){
 			
 			return null;
 		},
+		
+		// Returns the socket of the username
+		getUserByUsername: function(username){
+			for(let i = 0; i < this.users.length; i++){
+				let user = this.users[i];
 				
+				if(user.username == username){
+					return user;
+				}
+			}
+			
+			return null;
+		},
+		
 		// filters out special characters and replaces them with html entities (based off of the function made by the guy who fixed the chat)
 		htmlEntities: function(content){
 			return content.toString().replace(/&/g, "&#38;").replace(/</g, "&#60;").replace(/>/g, "&#62;").replace(/"/g, "&#34;").replace(/'/g, "&#39;").replace(/\//g, "&#47;").replace(/\\/g, "&#92;");
@@ -271,10 +306,25 @@ function createServerEntity(position, rotation, id, material, geometry, socket){
   return {
     position: position,
     rotation: rotation,
+    velocity: {x: 0, y: 0, z: 0},
     id: id,
     material: material,
     geometry: geometry,
     socket: socket, //socket the entity is bound too (optional, only for entities bound to clients)
+    
+    // apply a vector of force to this entity
+    force: function(x, y, z){
+    	this.velocity.x += x;
+    	this.velocity.y += y;
+    	this.velocity.z += z;
+    },
+    
+    // update position from velocity
+    update: function(){
+    	this.position.x += this.velocity.x;
+    	this.position.y += this.velocity.y;
+    	this.position.z += this.velocity.z;
+    },
     
     //Returns entity values that the server expects the client to cache (static values)
     cache: function(){

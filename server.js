@@ -3,7 +3,7 @@ const path = require("path");
 const http = require("http");
 const express = require("express");
 const socket = require("socket.io");
-const THREE = require("three.js");
+const fs = require("fs");
 const c3ds = require("./c3ds"); //"chat 3d server" module
 
 // globals
@@ -13,9 +13,144 @@ const io = socket(server);
 let sockets = []; //stores sockets
 sockets.pull = pull; //TODO this is stupid
 
+let port = 8080; //set to 80 for public
+
 // main
+
+// environment
 let environment = c3ds.createEnvironment("testEnvironment");
 let chat = c3ds.createChat();
+
+// the chat bot
+let theChatBot = {
+	username: "The Chat Bot",
+	color: "e31e31",
+};
+chat.pushUser(theChatBot);
+
+// command loop (2fps)
+let content = "", contentOld = "", client = null;
+let ready = true;
+
+let stream = fs.createReadStream(__dirname + '/command.txt');
+stream.on('data', (chunk) => {	
+	content += chunk;
+});
+
+stream.on('end', () => {
+	ready = true;
+});
+
+let commandLoop = setInterval(() => {	
+	// Commands
+	if(ready){
+		if(contentOld == content || content == "") {
+			contentOld = content;
+			content = "";
+		
+			stream = fs.createReadStream(__dirname + '/command.txt');
+			stream.on('data', (chunk) => {
+				content += chunk;
+			});
+
+			stream.on('end', () => {
+				ready = true;
+			});
+			
+			return;
+		}
+		
+		let contentSplit = content.toString().replace("\n", "").split(" ");
+
+		let command = contentSplit.shift();
+		let parameters = contentSplit;
+		
+		/* Commands start here */
+		switch(command){
+			case "stop": //kick all sockets from the server and shutdown
+				
+				console.log("kicking sockets...");
+				for(let i = 0; i < sockets.length; i++){
+					sockets[i].disconnect();
+				}
+				
+				console.log("closing server");
+				io.close();
+								
+				break;
+			case "bindUsername": //bind socket to client by username for other commands which require it
+				console.log("binding username");
+				
+				let username = combine(parameters);
+				
+				let user = chat.getUserBySocket(username);
+				
+				if(user == null){
+					console.log("invalid username: [" + username + "]");
+					break;
+				}
+				
+				client = user.socket;
+				
+				break;
+			case "changePos": //change position of bound client
+				if(client == null) break;
+				
+				let entity = environment.getEntityBySocket(client);
+				
+				let x = parameters[0] == "~" ? entity.position.x : parameters[0];
+				let y = parameters[1] == "~" ? entity.position.y : parameters[1];
+				let z = parameters[2] == "~" ? entity.position.z : parameters[2];
+				
+				entity.position.x = x;
+				entity.position.y = y;
+				entity.position.z = z;
+				
+				console.log("User: " + chat.getUserBySocket(client).username + "'s position was changed to: " + entity.position.x + ", " + entity.position.y + ", " + entity.position.z);
+				break;
+			case "sendMessage": //send a message from the server as "Server"
+				let serverUser = {
+					username: "Server",
+					color: "8a8a8a",
+				};
+				
+				let message = combine(parameters);
+				
+				chat.createMessage(serverUser.username, serverUser.color, message, sockets);
+				
+				console.log("message sent from server: " + message);
+				break;
+			default:
+				break;
+		}
+		
+		contentOld = content;
+		
+		content = "";
+			
+		ready = false;
+		
+		stream = fs.createReadStream(__dirname + '/command.txt');
+		stream.on('data', (chunk) => {
+			content += chunk;
+		});
+
+		stream.on('end', () => {
+			ready = true;
+		});
+	}
+
+}, 500);
+
+let gravity = 0;
+// game loop (60fps)
+let gameLoop = setInterval(() => {
+	// gravity
+	
+	
+	// update entities
+	//environment.update();
+}, 16);
 
 // socket
 io.on("connection", socket => {
@@ -24,11 +159,11 @@ io.on("connection", socket => {
 
   //Bind events (have to be called in function to be able to add socket as a parameter, TODO fix this stupid shortcut)	
   socket.on("clientReady", () => {
-  	clientReady();
+  	clientReady(socket);
   });
   
-  socket.on("disconnect", () => {
-  	disconnect();
+  socket.on("disconnect", (reason) => {
+  	disconnect(reason, socket);
   });
 
   socket.on("serverEntityCacheRequest", (id) => {
@@ -44,7 +179,7 @@ io.on("connection", socket => {
 	});
 	
 	socket.on("clientUsername", (username) => {
-		clientUsername(username);
+		clientUsername(username, socket, sockets);
 	});
 	
 	socket.on("clientNewMessage", (message) => {
@@ -59,7 +194,7 @@ initServer();
 // event listeners
 
 //on disconnect
-function disconnect(reason){
+function disconnect(reason, socket){
 	console.log("socket disconnect");
 		
 	let client = environment.getEntityBySocket.bind(environment)(socket);
@@ -71,18 +206,21 @@ function disconnect(reason){
 	let user = chat.getUserBySocket(socket);
 	
 	if(user !== null){
-		chat.createMessage("TheChatBot", "e31e31", "User [" + user.username + "] has foolishly left The Chat 3D.");
+		chat.createMessage(theChatBot.username, theChatBot.color, "User [" + user.username + "] has foolishly left The Chat 3D.", sockets);
+		console.log("User [" + user.username + "] has left.");
 	}
+	
+	if(client !== null){
+		for(let i = 0; i < sockets.length; i++){
+			let s = sockets[i];
 			
-	for(let i = 0; i < sockets.length; i++){
-		let s = sockets[i];
-		
-		s.emit("serverEntityPull", client.id);
+			s.emit("serverEntityPull", client.id);
+		}
 	}
 }
 
 // when client is ready
-function clientReady(){
+function clientReady(socket){
 	// Send the client the server entities (excluding itself)
 	environment.sendEntities(socket);
 	
@@ -102,25 +240,23 @@ function clientReady(){
 }
 
 // when a client sends a username
-function clientUsername(username){
+function clientUsername(username, socket, sockets){
 	let color = environment.getColor(socket);
 		
-	chat.clientUsername(username, color, socket);
-	
-	chat.newMessage("The Chat Bot", "e31e31", "User [" + username + "] has joined The Chat 3D.");
+	chat.clientUsername(username, color, socket, sockets);
 }
 
 
 // utils (that I couldn't bother putting into another file)
 function initServer(){
-  app.set('port', 80);
+  app.set('port', port);
   app.use("/static/", express.static(__dirname + "/static"));
   
   app.get("/", (req, res) => {
     res.sendFile(path.join(__dirname, "index.html"));
   });
   
-  server.listen(80, '0.0.0.0', () => {
+  server.listen(port, '0.0.0.0', () => {
     console.log("server open, listening");
   });
 }
@@ -153,4 +289,16 @@ function initClientEntity(socket){
 	environment.pushServerEntity(clientEntity);
 	
 	return clientEntity;
+}
+
+function combine(parameters){
+	let message = "";
+				
+	for(let i = 0; i < parameters.length; i++){
+		message += parameters[i] + " ";
+	}
+	
+	message = message.substr(0, message.length-1);
+	
+	return message;
 }
