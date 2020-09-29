@@ -21,11 +21,23 @@ function createEntity(id){
 		scene: false,
 
 		//Takes in cache values
-		cache: function(material, geometry){
+		cache: function(material, geometry, face){
 			this.material = new MeshBasicMaterial({color: material});
-
+			let faceMaterial = new MeshBasicMaterial({map: face});
+			
+			
+			
+			let materials = [
+				this.material,
+				this.material,
+				this.material,
+				this.material,
+				this.material,
+				faceMaterial,
+			];
+			
 			this.geometry = new BoxGeometry();
-			this.mesh = new Mesh( this.geometry, this.material );
+			this.mesh = new Mesh( this.geometry, materials);
 		},
 		
 		//Takes in dynamic values

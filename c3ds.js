@@ -1,11 +1,13 @@
 //The Chat 3D's server module
 
+const fs = require("fs");
+
 // creates a new environment for entities and map data
 function createEnvironment(name){
   return {
     name: name, //optional name, more decorational than anything
     serverEntities: [], //all entities in the scene
-    
+    map: null, // map data for environment
     
     // REQUEST HANDLE METHODS //
     
@@ -129,6 +131,11 @@ function createEnvironment(name){
       return "pulled entity with id: " + entity.id;
     },
     
+    // push a map
+		pushMap: function(map){
+			this.map = map;
+		},
+		
     // generates a unique id for a new entity between 0 and 999
     generateID: function(){
     	let id;
@@ -161,6 +168,15 @@ function createEnvironment(name){
 			
 			return entity.material;
 		},
+		
+		// Applies a force to all entities, good for gravity and likewise
+		forceAll: function(x, y, z){
+			for(let i = 0; i < this.serverEntities.length; i++){
+				let e = this.serverEntities[i];
+				
+				e.force(x, y, z);
+			}
+		}
 		
   };
 }
@@ -297,7 +313,6 @@ function createChat(){
 			
 			return zeroes + str;
 		},
-		
 	};
 }
 
@@ -349,9 +364,71 @@ function createServerEntity(position, rotation, id, material, geometry, socket){
   };
 }
 
+function createGameLoop(fps, callback){
+	return setInterval(callback, 1000/fps);
+}
+
+// Creates a map for the environment, can either be fed data at start or given with loadData functions
+function createMap(data){
+	let r = {
+		data: data == undefined ? null : data,
+		objects: [],
+		
+		
+		// SEND METHODS //
+		
+		sendData: function(socket){
+			socket.emit("serverMapDataResponse", objects);
+		},
+		
+		// LOAD METHODS //
+		
+		loadDataFromFile: function(filename){ //note: must be from root of server
+			fs.readFile(filename, (err, data) => {
+				if(err){
+					throw err;
+				}
+				
+				this.loadData(data);
+			});
+		},
+		
+		loadData: function(data){ //feeds data to this.data and parses if parse == true (mainly just a callback for other load functions)
+			this.data = data;
+			
+			this.parseData();
+		},
+		
+		
+		// UTILITY METHODS //
+		
+		parseData: function(){ //parse the data into objects which are pushed to this.objects
+			let parsed = this.data.split("!");
+			
+			for(let i = 0; i < parsed.length; i++){
+				let obj = parsed[i].replace(" ", "").split(",");
+				
+				for(let b = 0; b < obj.length; b++){
+					obj[b] = parseFloat(obj[b]);
+				}
+						
+				this.objects.push(obj);
+			}
+			
+		},
+		
+	};
+	
+	r.parseData();
+	
+	return r;
+}
+
 // module
 module.exports = {
   createServerEntity: createServerEntity,
   createEnvironment: createEnvironment,
   createChat: createChat,
+  createGameLoop: createGameLoop,
+  createMap: createMap,
 };

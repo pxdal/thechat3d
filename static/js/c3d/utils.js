@@ -30,3 +30,21 @@ function attach(parent, child){
 	
 	return parent; //it doesn't need to return but it does
 }
+
+//Return path to texture
+function texture(name){
+	return "static/media/textures/" + name;
+}
+
+// Store textures under "names" in cache
+function cacheTextures(names, loader){
+	let cache = {};
+	
+	for(let i = 0; i < names.length; i++){
+		let t = loader.load( texture(names[i]) );
+		
+		cache[ names[i].replace(".", "").replace("png", "").replace("jpg", "").replace("jpeg", "") ] = t;
+	}
+	
+	return cache;
+}

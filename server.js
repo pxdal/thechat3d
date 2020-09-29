@@ -17,9 +17,11 @@ let port = 8080; //set to 80 for public
 
 // main
 
-// environment
+// environment (+map)
 let environment = c3ds.createEnvironment("testEnvironment");
 let chat = c3ds.createChat();
+
+environment.pushMap(c3ds.createMap("0,0,0,10,1,10"));
 
 // the chat bot
 let theChatBot = {
@@ -28,7 +30,21 @@ let theChatBot = {
 };
 chat.pushUser(theChatBot);
 
+// game loop (60fps)
+
+let gravity = 0.01;
+
+let gameLoop = c3ds.createGameLoop(60, () => {
+	// gravity
+	environment.forceAll(0, gravity, 0);
+	
+	// update entities
+	environment.update();
+});
+
+
 // command loop (2fps)
+
 let content = "", contentOld = "", client = null;
 let ready = true;
 
@@ -41,7 +57,7 @@ stream.on('end', () => {
 	ready = true;
 });
 
-let commandLoop = setInterval(() => {	
+let commandLoop = c3ds.createGameLoop(2, () => {
 	// Commands
 	if(ready){
 		if(contentOld == content || content == "") {
@@ -140,17 +156,8 @@ let commandLoop = setInterval(() => {
 		});
 	}
 
-}, 500);
+});
 
-let gravity = 0;
-// game loop (60fps)
-let gameLoop = setInterval(() => {
-	// gravity
-	
-	
-	// update entities
-	//environment.update();
-}, 16);
 
 // socket
 io.on("connection", socket => {
@@ -291,6 +298,7 @@ function initClientEntity(socket){
 	return clientEntity;
 }
 
+// combine array of strings by space
 function combine(parameters){
 	let message = "";
 				

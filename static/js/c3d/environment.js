@@ -17,6 +17,7 @@ function createEnvironment(socket){
     entities: [], //array of client entities
     socket: socket, //socket
     clientEntity: null, //the clientEntity which this client controls
+    map: null,
     
     
 		// FETCH METHODS //
@@ -56,10 +57,10 @@ function createEnvironment(socket){
 		},
 		
     // Callback for the serverEntityCacheResponse event, stores the values 
-    serverEntityCacheResponse: function(cache, id){
+    serverEntityCacheResponse: function(cache, id, texture){
       let entity = this.getEntityByID(id);
       
-      entity.cache(cache.material, cache.geometry);
+      entity.cache(cache.material, cache.geometry, texture);
     },
     
     // Callback for the serverEntityDynamicResponse event, stores values
@@ -75,8 +76,13 @@ function createEnvironment(socket){
     	entity.dynamic(dynamic.position, dynamic.rotation);
     },
     
+    // Callback for the serverMapDataResponse event
+    serverMapDataResponse: function(objects){
+    	this.map = objects;
+    },
     
-    // UPDATE METHODS (called every frame)//
+    
+    // UPDATE METHODS (called every frame) //
     
     // Updates the positions of entities
     update: function(){
@@ -106,6 +112,32 @@ function createEnvironment(socket){
     	}
     },
 
+		// MAP METHODS //
+		renderMap: function(){ //pushes map objects to scene (meant to be called once)
+			for(let i = 0; i < this.map.length; i++){
+				let objData = map[i];
+				
+				let position = {
+					x: objData[0],
+					y: objData[1],
+					z: objData[2],
+				};
+				
+				let size = {
+					x: objData[3],
+					y: objData[4],
+					z: objData[5],
+				};	
+				
+				let geometry = new BoxGeometry(size.x, size.y, size.z);
+				let material = new MeshBasicMaterial({color: 0x3ef1f7 });
+				
+				let object = new Mesh(geometry, material);
+				
+				scene.add( object );
+			}	
+		},
+		
     
     // UTILS //
     

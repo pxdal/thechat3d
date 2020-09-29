@@ -4,7 +4,7 @@
 const socket = io();
 
 // whether or not to display debug info
-let debug = true; //defaults to false
+let debug = true; //defaults to true
 
 // environment/camera/renderer
 let environment, chat, camera, renderer, stats, clock;
@@ -14,6 +14,11 @@ let fov = 75;
 let aspect = window.innerWidth / window.innerHeight;
 let near = 0.1;
 let far = 1000;
+
+// textures
+let loader = new TextureLoader();
+let textures = ["smiley.png", "stonks.png", "bigsmile.jpg"];
+let textureCache = cacheTextures(textures, loader);
 
 // main
 init();
@@ -134,10 +139,13 @@ function clientEntityIDResponse(id){
 //socket
 socket.on("serverPromptError", serverPromptError);
 socket.on("serverEntityIDResponse", environment.serverEntityIDResponse.bind(environment)); //bind environment so "this" calls aren't screwed
-socket.on("serverEntityCacheResponse", environment.serverEntityCacheResponse.bind(environment));
+socket.on("serverEntityCacheResponse", (cache, id) => {
+	environment.serverEntityCacheResponse(cache, id, textureCache.bigsmile);
+});
 socket.on("serverEntityDynamicResponse", environment.serverEntityDynamicResponse.bind(environment));
 socket.on("serverEntityPull", environment.serverEntityPull.bind(environment));
 socket.on("serverNewMessage", chat.serverNewMessage.bind(chat));
+server.on("serverMapDataResponse", environment.serverMapSend.bind(environment));
 socket.on("clientEntityIDResponse", clientEntityIDResponse);
 
 //window
