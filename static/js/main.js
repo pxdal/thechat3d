@@ -145,7 +145,7 @@ socket.on("serverEntityCacheResponse", (cache, id) => {
 socket.on("serverEntityDynamicResponse", environment.serverEntityDynamicResponse.bind(environment));
 socket.on("serverEntityPull", environment.serverEntityPull.bind(environment));
 socket.on("serverNewMessage", chat.serverNewMessage.bind(chat));
-server.on("serverMapDataResponse", environment.serverMapSend.bind(environment));
+socket.on("serverMapDataResponse", environment.serverMapDataResponse.bind(environment));
 socket.on("clientEntityIDResponse", clientEntityIDResponse);
 
 //window

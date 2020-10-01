@@ -79,6 +79,7 @@ function createEnvironment(socket){
     // Callback for the serverMapDataResponse event
     serverMapDataResponse: function(objects){
     	this.map = objects;
+    	this.renderMap();
     },
     
     
@@ -115,7 +116,7 @@ function createEnvironment(socket){
 		// MAP METHODS //
 		renderMap: function(){ //pushes map objects to scene (meant to be called once)
 			for(let i = 0; i < this.map.length; i++){
-				let objData = map[i];
+				let objData = this.map[i];
 				
 				let position = {
 					x: objData[0],
@@ -130,12 +131,22 @@ function createEnvironment(socket){
 				};	
 				
 				let geometry = new BoxGeometry(size.x, size.y, size.z);
-				let material = new MeshBasicMaterial({color: 0x3ef1f7 });
+				let material = new MeshLambertMaterial({color: 0x3ef1f7 });
 				
 				let object = new Mesh(geometry, material);
+				object.position.x = position.x;
+				object.position.y = position.y;
+				object.position.z = position.z;
 				
-				scene.add( object );
+				this.scene.add( object );
 			}	
+			
+			let ambience = new AmbientLight(0x404040);
+			let light = new DirectionalLight(0xffffff, 0.48);
+			light.position.x = -0.3;
+			
+			this.scene.add(ambience);
+			this.scene.add(light);
 		},
 		
     

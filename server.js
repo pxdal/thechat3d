@@ -21,7 +21,8 @@ let port = 8080; //set to 80 for public
 let environment = c3ds.createEnvironment("testEnvironment");
 let chat = c3ds.createChat();
 
-environment.pushMap(c3ds.createMap("0,0,0,10,1,10"));
+environment.pushMap(c3ds.createMap("0,-1,0,20,1,20!2,0.5,2,3,2,3"));
+let formatted = environment.map.formatData();
 
 // the chat bot
 let theChatBot = {
@@ -32,9 +33,9 @@ chat.pushUser(theChatBot);
 
 // game loop (60fps)
 
-let gravity = 0.01;
+let gravity = -0.00;
 
-let gameLoop = c3ds.createGameLoop(60, () => {
+let gameLoop = c3ds.createGameLoop(60, () => {	
 	// gravity
 	environment.forceAll(0, gravity, 0);
 	
@@ -49,6 +50,7 @@ let content = "", contentOld = "", client = null;
 let ready = true;
 
 let stream = fs.createReadStream(__dirname + '/command.txt');
+
 stream.on('data', (chunk) => {	
 	content += chunk;
 });
@@ -244,6 +246,9 @@ function clientReady(socket){
 			environment.sendServerEntityID(s, clientEntity);
 		}
 	}
+	
+	// Send map data
+	environment.map.sendData(socket);
 }
 
 // when a client sends a username

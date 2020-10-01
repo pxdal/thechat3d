@@ -35,16 +35,14 @@ function createEnvironment(name){
     // Callback for clientInputRequest
     clientInputRequest: function(input, socket){
     	let entity = this.getEntityBySocket(socket);
-    	let speed = 0.06;
+    	let speed = 0.01;
     	let rotSpeed = 0.04;
     	
     	if(input[0]){
-    		entity.position.x -= speed * Math.sin(entity.rotation.y);
-    		entity.position.z -= speed * Math.cos(entity.rotation.y);
+    		entity.force(-speed * Math.sin(entity.rotation.y), 0, -speed * Math.cos(entity.rotation.y));
     	}
     	if(input[2]){
-    		entity.position.x += speed * Math.sin(entity.rotation.y);
-    		entity.position.z += speed * Math.cos(entity.rotation.y);
+    		entity.force(speed * Math.sin(entity.rotation.y), 0, speed * Math.cos(entity.rotation.y));
     	}
     	
     	if(input[1]){
@@ -77,13 +75,24 @@ function createEnvironment(name){
 		
 		// updates every entity's position
 		update: function(){
+			// TODO this has to be in two seperate loops because of how collisions work, it's unintuitive and should be fixed
 			for(let i = 0; i < this.serverEntities.length; i++){
 				let entity = this.serverEntities[i];
+				
+				entity.checkMapCollisions(this.map.formatData());
+				
+				entity.checkCollisions(this.serverEntities);
+			}
+			
+			for(let i = 0; i < this.serverEntities.length; i++){
+				let entity = this.serverEntities[i];
+				
+				entity.force(-entity.velocity.x/10, 0, -entity.velocity.z/10);
 				
 				entity.update();
 			}
 		},
-		
+		 
     
     // UTILS //
     
@@ -321,14 +330,29 @@ function createServerEntity(position, rotation, id, material, geometry, socket){
   return {
     position: position,
     rotation: rotation,
+    size: {
+    	x: 1,
+    	y: 1,
+    	z: 1,
+    },
     velocity: {x: 0, y: 0, z: 0},
+    oldVelocity: {x: 0, y: 0, z: 0}, //buffer which stores the velocity before it gets changed (for collisions)
     id: id,
     material: material,
     geometry: geometry,
     socket: socket, //socket the entity is bound too (optional, only for entities bound to clients)
     
+    // store current velocity into oldVelocity (called before every velocity change)
+    storeVelocity: function(){
+    	this.oldVelocity.x = this.velocity.x;
+    	this.oldVelocity.y = this.velocity.y;
+    	this.oldVelocity.z = this.velocity.z;
+    },
+    
     // apply a vector of force to this entity
     force: function(x, y, z){
+    	this.storeVelocity();
+    	
     	this.velocity.x += x;
     	this.velocity.y += y;
     	this.velocity.z += z;
@@ -339,6 +363,11 @@ function createServerEntity(position, rotation, id, material, geometry, socket){
     	this.position.x += this.velocity.x;
     	this.position.y += this.velocity.y;
     	this.position.z += this.velocity.z;
+    },
+    
+    // returns true if self is colliding with another rectangular object
+    rrCollision: function(object){
+    	return (this.position.x+this.size.x/2 > object.position.x-object.size.x/2 && this.position.x-this.size.x/2 < object.position.x+object.size.x/2 && this.position.z+this.size.z/2 > object.position.z-object.size.z/2 && this.position.z-this.size.z/2 < object.position.z+object.size.z/2 && this.position.y+this.size.y/2 > object.position.y-object.size.y && this.position.y-this.size.y/2 < object.position.y+object.size.y);
     },
     
     //Returns entity values that the server expects the client to cache (static values)
@@ -361,6 +390,59 @@ function createServerEntity(position, rotation, id, material, geometry, socket){
       	rotation: entity.rotation
       };
     },
+    
+    // callback for when it's colliding with another object
+    onCollide: function(obj){
+    	this.storeVelocity();
+    	this.velocity.x = obj.oldVelocity.x;
+    	this.velocity.y = obj.oldVelocity.y;
+    	this.velocity.z = obj.oldVelocity.z;
+    },
+    
+    onMapCollide: function(obj){
+    	//angle from this to the obj (DOES NOT account for any x or z rotation other than 0 TODO add support for that)
+			let horizontal = Math.atan( (obj.position.z-this.position.z)/(obj.position.x-this.position.x) )*180/Math.PI;
+			let vertical = Math.atan( (obj.position.y-this.position.y)/(obj.position.x-this.position.x) )*180/Math.PI;
+			
+			console.log(horizontal + ", " + vertical);
+    },
+    
+    // returns position in the next frame using oldVelocity (for checking collisions)
+    nextFrame: function(){
+    	return {
+    		position: {
+    			x: this.position.x+this.oldVelocity.x,
+    			y: this.position.y+this.oldVelocity.y,
+    			z: this.position.z+this.oldVelocity.z,
+    		},
+    		size: this.size,
+    	};
+    },
+    
+    // check if it's colliding with objects
+    checkCollisions: function(objects){
+    	for(let i = 0; i < objects.length; i++){
+    		let obj = objects[i];
+    		
+    		if(obj.id == this.id) continue;
+    		
+    		if( rrCol(this.nextFrame(), obj.nextFrame()) ){
+    			this.onCollide(obj);
+    		}
+    	}
+    },
+    
+    checkMapCollisions: function(objects){
+    	for(let i = 0; i < objects.length; i++){
+    		let obj = objects[i];
+    		
+    		if(obj.id == this.id) continue;
+    		
+    		if( rrCol(this.nextFrame(), obj.nextFrame()) ){
+    			this.onMapCollide(obj);
+    		}
+    	}
+    }
   };
 }
 
@@ -378,7 +460,7 @@ function createMap(data){
 		// SEND METHODS //
 		
 		sendData: function(socket){
-			socket.emit("serverMapDataResponse", objects);
+			socket.emit("serverMapDataResponse", this.objects);
 		},
 		
 		// LOAD METHODS //
@@ -393,7 +475,7 @@ function createMap(data){
 			});
 		},
 		
-		loadData: function(data){ //feeds data to this.data and parses if parse == true (mainly just a callback for other load functions)
+		loadData: function(data){ //feeds data to this.data and parses (mainly just a callback for other load functions)
 			this.data = data;
 			
 			this.parseData();
@@ -417,11 +499,61 @@ function createMap(data){
 			
 		},
 		
+		formatData: function(){ //formats the data like a server entity for collisions (NOTE: returns a seperate array, won't affect existing datA)
+			let formatted = [];
+			
+			for(let i = 0; i < this.objects.length; i++){
+				let o = this.objects[i];
+				
+				let obj = {
+					position: {
+						x: o[0],
+						y: o[1],
+						z: o[2],
+					},
+					rotation: {
+						x: 0,
+						y: 0,
+						z: 0,
+					},
+					size: {
+						x: o[3],
+						y: o[4],
+						z: o[5],
+					},
+					velocity: {
+						x: 0,
+						y: 0,
+						z: 0,
+					},
+					oldVelocity: {
+						x: 0,
+						y: 0,
+						z: 0,
+					},
+					nextFrame: function(){
+						return {
+							position: this.position,
+							size: this.size,
+						};
+					}
+				};
+				
+				formatted.push(obj);
+			}
+			
+			return formatted;
+		}
 	};
 	
 	r.parseData();
 	
 	return r;
+}
+
+// returns true if obj1 and obj2 are colliding, and are cubes (NOTE: assumes position is center of cube)
+function rrCol(obj1, obj2){
+	return (obj1.position.x+obj1.size.x/2 > obj2.position.x-obj2.size.x/2 && obj1.position.x-obj1.size.x/2 < obj2.position.x+obj2.size.x/2 && obj1.position.z+obj1.size.z/2 > obj2.position.z-obj2.size.z/2 && obj1.position.z-obj1.size.z/2 < obj2.position.z+obj2.size.z/2 && obj1.position.y+obj1.size.y/2 > obj2.position.y-obj2.size.y/2 && obj1.position.y-obj1.size.y/2 < obj2.position.y+obj2.size.y/2);
 }
 
 // module
