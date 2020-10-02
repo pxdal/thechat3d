@@ -66,7 +66,7 @@ function animate(){
   
   // if there is an input change request it
   if( keyPressed() ){
-  	environment.clientEntity.bindInput(createInput(["KeyW", "KeyA", "KeyS", "KeyD"]));
+  	environment.clientEntity.bindInput(createInput(["KeyW", "KeyA", "KeyS", "KeyD", "Space", "ShiftLeft"]));
   	
   	if(document.activeElement !== chat.inputElement) environment.requestInput();
   	

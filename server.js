@@ -1,3 +1,5 @@
+// dead weight
+
 // load modules
 const path = require("path");
 const http = require("http");
@@ -33,7 +35,7 @@ chat.pushUser(theChatBot);
 
 // game loop (60fps)
 
-let gravity = -0.00;
+let gravity = -0.01;
 
 let gameLoop = c3ds.createGameLoop(60, () => {	
 	// gravity

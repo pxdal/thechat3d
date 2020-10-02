@@ -4,6 +4,7 @@
 function initRenderer(){
   let renderer = new WebGLRenderer();
   
+  renderer.setPixelRatio( window.devicePixelRatio );
   renderer.setSize(width, height);
   document.body.appendChild( renderer.domElement );
   

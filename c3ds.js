@@ -51,6 +51,12 @@ function createEnvironment(name){
     	if(input[3]){
     		entity.rotation.y -= rotSpeed;
     	}
+    	if(input[4]){
+    		entity.force(0, 0.02, 0);
+    	}
+    	if(input[5]){
+    		entity.force(0, -0.01, 0);
+    	}
     },
     
     
@@ -79,15 +85,17 @@ function createEnvironment(name){
 			for(let i = 0; i < this.serverEntities.length; i++){
 				let entity = this.serverEntities[i];
 				
-				entity.checkMapCollisions(this.map.formatData());
-				
+				//check collisions of entities				
 				entity.checkCollisions(this.serverEntities);
+				
+				//check collisions of map
+				entity.checkMapCollisions(this.map.formatData());
 			}
 			
 			for(let i = 0; i < this.serverEntities.length; i++){
 				let entity = this.serverEntities[i];
 				
-				entity.force(-entity.velocity.x/10, 0, -entity.velocity.z/10);
+				entity.force(-entity.velocity.x/10, -entity.velocity.y/10, -entity.velocity.z/10);
 				
 				entity.update();
 			}
@@ -400,11 +408,26 @@ function createServerEntity(position, rotation, id, material, geometry, socket){
     },
     
     onMapCollide: function(obj){
-    	//angle from this to the obj (DOES NOT account for any x or z rotation other than 0 TODO add support for that)
-			let horizontal = Math.atan( (obj.position.z-this.position.z)/(obj.position.x-this.position.x) )*180/Math.PI;
-			let vertical = Math.atan( (obj.position.y-this.position.y)/(obj.position.x-this.position.x) )*180/Math.PI;
-			
-			console.log(horizontal + ", " + vertical);
+    	//quick math constants
+    	let dx = obj.position.x-this.position.x;
+    	let dy = obj.position.y-this.position.y;
+    	let dz = obj.position.z-this.position.z;
+    	
+    	//angles
+    	let horizontal = Math.atan( dx/dz )*180/Math.PI;
+ 			let vertical = Math.atan( Math.sqrt(dx*dx + dz*dz)/dy )*180/Math.PI;
+ 					
+			let h = horizontal > 45 || horizontal < -45 ? 90-horizontal : horizontal;
+			let verticall = Math.abs( Math.atan( (obj.size.x/2)/Math.cos(h*Math.PI/180)/(obj.size.y/2) ) )*180/Math.PI;
+    	
+    	//choke velocity based on axis of face
+    	if(Math.abs(vertical) < verticall){
+    		this.velocity.y = 0;
+    	} else if(horizontal <= 45 && horizontal >= -45){
+    		this.velocity.z = 0;
+    	} else if(horizontal >= 45 || horizontal <= -45){
+    		this.velocity.x = 0;
+    	}
     },
     
     // returns position in the next frame using oldVelocity (for checking collisions)
