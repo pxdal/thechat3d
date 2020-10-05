@@ -1,6 +1,10 @@
 // aliases
 let Scene = THREE.Scene,
     PerspectiveCamera = THREE.PerspectiveCamera,
+    AudioListener = THREE.AudioListener,
+    Audio = THREE.Audio,
+    AudioLoader = THREE.AudioLoader,
+    PositionalAudio = THREE.PositionalAudio,
     WebGLRenderer = THREE.WebGLRenderer,
     BoxGeometry = THREE.BoxGeometry,
     MeshBasicMaterial = THREE.MeshBasicMaterial,

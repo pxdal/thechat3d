@@ -19,11 +19,14 @@ let port = 8080; //set to 80 for public
 
 // main
 
+// constants
+let yborder = -50;
+
 // environment (+map)
 let environment = c3ds.createEnvironment("testEnvironment");
 let chat = c3ds.createChat();
 
-environment.pushMap(c3ds.createMap("0,-1,0,20,1,20!2,0.5,2,3,2,3"));
+environment.pushMap(c3ds.createMap("0,-0.5,0,20,1,20!6,0.8,-7,3,2,3!2,0.5,-7,2,1,2!6,2,-3,2,1,2!6.5,3,0.2,2,1,2!5.9,3.6,3.2,2,1,2!-5.5,0.05,-2,2,1,2!2.5,4.05,4,2,1,2"));
 let formatted = environment.map.formatData();
 
 // the chat bot
@@ -42,7 +45,7 @@ let gameLoop = c3ds.createGameLoop(60, () => {
 	environment.forceAll(0, gravity, 0);
 	
 	// update entities
-	environment.update();
+	environment.update(yborder);
 });
 
 
@@ -284,7 +287,7 @@ function randomColor(mode){
 function randomCoords(mx, my, mz){
 	return {
 		x: Math.floor(Math.random() * (mx+1)) - mx/2,
-		y: Math.floor(Math.random() * (my+1)) - my/2,
+		y: 0.75,//Math.floor(Math.random() * (my+1)) - my/2,
 		z: Math.floor(Math.random() * (mz+1)) - mz/2,
 	};
 }

@@ -7,7 +7,7 @@ const socket = io();
 let debug = true; //defaults to true
 
 // environment/camera/renderer
-let environment, chat, camera, renderer, stats, clock;
+let environment, chat, camera, listener, audioLoader, music, renderer, stats, clock;
 
 // camera
 let fov = 75;
@@ -16,9 +16,9 @@ let near = 0.1;
 let far = 1000;
 
 // textures
-let loader = new TextureLoader();
+let textureLoader = new TextureLoader();
 let textures = ["smiley.png", "stonks.png", "bigsmile.jpg"];
-let textureCache = cacheTextures(textures, loader);
+let textureCache = cacheTextures(textures, textureLoader);
 
 // main
 init();
@@ -34,8 +34,19 @@ function init(){
 	chat.initInput();
 	chat.initDomElement(document.body);
 	
-  // camera
+  // camera + audio listener
   camera = new PerspectiveCamera( fov, aspect, near, far );
+  listener = new AudioListener();
+  camera.add( listener );
+  
+  music = new Audio( listener );
+  audioLoader = new AudioLoader();
+	audioLoader.load( "static/media/sounds/c3d-whitenoise.ogg", function(buffer){
+		music.setBuffer(buffer);
+		music.setLoop(true);
+		music.setVolume( 0.006 );
+	});  
+  
   
   // clock
   clock = new Clock( false );
@@ -66,6 +77,8 @@ function animate(){
   
   // if there is an input change request it
   if( keyPressed() ){
+  	music.play();
+  	
   	environment.clientEntity.bindInput(createInput(["KeyW", "KeyA", "KeyS", "KeyD", "Space", "ShiftLeft"]));
   	
   	if(document.activeElement !== chat.inputElement) environment.requestInput();

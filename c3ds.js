@@ -34,9 +34,11 @@ function createEnvironment(name){
            
     // Callback for clientInputRequest
     clientInputRequest: function(input, socket){
+    	let mode = "jump"; //modes: jump (jumps like normal), flight: applies constant up/down force (is affected by gravity)
     	let entity = this.getEntityBySocket(socket);
     	let speed = 0.01;
     	let rotSpeed = 0.04;
+    	let jumpForce = 0.15;
     	
     	if(input[0]){
     		entity.force(-speed * Math.sin(entity.rotation.y), 0, -speed * Math.cos(entity.rotation.y));
@@ -52,10 +54,15 @@ function createEnvironment(name){
     		entity.rotation.y -= rotSpeed;
     	}
     	if(input[4]){
-    		entity.force(0, 0.02, 0);
+	  		if(entity.onGround || mode == "flight"){
+	  			entity.force(0, jumpForce, 0);
+	  			entity.onGround = false;
+	  		}
     	}
     	if(input[5]){
-    		entity.force(0, -0.01, 0);
+    		if(mode == "flight"){
+    			entity.force(0, -jumpForce, 0);
+    		}
     	}
     },
     
@@ -80,7 +87,7 @@ function createEnvironment(name){
     // UPDATE METHODS (run every frame)//
 		
 		// updates every entity's position
-		update: function(){
+		update: function(yborder){
 			// TODO this has to be in two seperate loops because of how collisions work, it's unintuitive and should be fixed
 			for(let i = 0; i < this.serverEntities.length; i++){
 				let entity = this.serverEntities[i];
@@ -90,12 +97,16 @@ function createEnvironment(name){
 				
 				//check collisions of map
 				entity.checkMapCollisions(this.map.formatData());
+				
+				if(entity.position.y < yborder){
+					entity.respawn();
+				}
 			}
 			
 			for(let i = 0; i < this.serverEntities.length; i++){
 				let entity = this.serverEntities[i];
 				
-				entity.force(-entity.velocity.x/10, -entity.velocity.y/10, -entity.velocity.z/10);
+				entity.force(-entity.velocity.x/10, 0, -entity.velocity.z/10);
 				
 				entity.update();
 			}
@@ -349,6 +360,7 @@ function createServerEntity(position, rotation, id, material, geometry, socket){
     material: material,
     geometry: geometry,
     socket: socket, //socket the entity is bound too (optional, only for entities bound to clients)
+    onGround: false, //gamestate which stores whether or not the player is touching the ground
     
     // store current velocity into oldVelocity (called before every velocity change)
     storeVelocity: function(){
@@ -418,10 +430,14 @@ function createServerEntity(position, rotation, id, material, geometry, socket){
  			let vertical = Math.atan( Math.sqrt(dx*dx + dz*dz)/dy )*180/Math.PI;
  					
 			let h = horizontal > 45 || horizontal < -45 ? 90-horizontal : horizontal;
-			let verticall = Math.abs( Math.atan( (obj.size.x/2)/Math.cos(h*Math.PI/180)/(obj.size.y/2) ) )*180/Math.PI;
+			let w = obj.size.x/2;
+			let verticall = Math.abs( Math.atan( (w/Math.cos(h*Math.PI/180))/(obj.size.y) ) )*180/Math.PI+(obj.size.x*5.5);
+    	
+    	console.log(vertical + ", " + verticall);
     	
     	//choke velocity based on axis of face
     	if(Math.abs(vertical) < verticall){
+    		this.onGround = true;
     		this.velocity.y = 0;
     	} else if(horizontal <= 45 && horizontal >= -45){
     		this.velocity.z = 0;
@@ -456,6 +472,8 @@ function createServerEntity(position, rotation, id, material, geometry, socket){
     },
     
     checkMapCollisions: function(objects){
+    	this.onGround = false;
+    
     	for(let i = 0; i < objects.length; i++){
     		let obj = objects[i];
     		
@@ -465,6 +483,13 @@ function createServerEntity(position, rotation, id, material, geometry, socket){
     			this.onMapCollide(obj);
     		}
     	}
+    },
+    respawn: function(){
+    	this.velocity.x = 0;
+    	this.velocity.z = 0;
+    	this.position.x = 0.1;
+    	this.position.y = 50;
+    	this.position.z = -0.1;
     }
   };
 }

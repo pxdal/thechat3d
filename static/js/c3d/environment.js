@@ -131,8 +131,10 @@ function createEnvironment(socket){
 					z: objData[5],
 				};	
 				
+				let colorDif=Math.floor(Math.random() * 100);
+				
 				let geometry = new BoxGeometry(size.x, size.y, size.z);
-				let material = new MeshLambertMaterial({color: 0x3ef1f7 });
+				let material = new MeshLambertMaterial({color: 0x3ef1f7-colorDif});
 				
 				let object = new Mesh(geometry, material);
 				object.position.x = position.x;
