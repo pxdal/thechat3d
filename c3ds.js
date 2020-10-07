@@ -34,11 +34,11 @@ function createEnvironment(name){
            
     // Callback for clientInputRequest
     clientInputRequest: function(input, socket){
-    	let mode = "flight"; //modes: jump (jumps like normal), flight: applies constant up/down force (is affected by gravity)
+    	let mode = "jump"; //modes: jump (jumps like normal), flight: applies constant up/down force (is affected by gravity)
     	let entity = this.getEntityBySocket(socket);
     	let speed = 0.01;
     	let rotSpeed = 0.04;
-    	let jumpForce = 0.0008;
+    	let jumpForce = 0.15;
     	
     	if(input[0]){
     		entity.force(-speed * Math.sin(entity.rotation.y), 0, -speed * Math.cos(entity.rotation.y));
@@ -435,26 +435,23 @@ function createServerEntity(position, rotation, id, material, geometry, socket){
     	
     	//angles
     	let horizontal = Math.atan( dx/dz )*180/Math.PI;
+			let horizontall = Math.atan( obj.size.x/obj.size.z )*180/Math.PI;
+			
 			let vertical = Math.atan( Math.sqrt(dx*dx + dz*dz)/dy )*180/Math.PI;
 			
 			let h = horizontal > 45 || horizontal < -45 ? 90-horizontal : horizontal;
-			//let h = horizontal;
-			let w = obj.size.x/2;
-			//let w = horizontal > 45 || horizontal < -45 ? obj.size.x/2 : obj.size.z/2;
+			let w = horizontal > horizontall || horizontal < -horizontall ? obj.size.x : obj.size.z;
+			let o = (w / ((obj.size.y+1)/(obj.size.y/2)) )/Math.cos(h*Math.PI/180);
 			
-			let verticall = Math.abs( Math.atan( (w/Math.cos(h*Math.PI/180))/(obj.size.y/2) ) )*180/Math.PI+(5.5*w);
-			
-			//console.log( w/Math.cos(horizontal*Math.PI/180) ); //
-			
-    	console.log(vertical + ", " + verticall);
-    	
+			let verticall = Math.abs( Math.atan( o/(obj.size.y/ ((w+1)/(w/2)) ) ) )*180/Math.PI;
+
     	//choke velocity based on axis of face
     	if(Math.abs(vertical) < verticall){
 				this.onGround = true;
 				this.velocity.y = 0;
-    	} else if(horizontal <= 45 && horizontal >= -45){
+    	} else if(horizontal < horizontall && horizontal > -horizontall){
     		this.velocity.z = 0;
-    	} else if(horizontal >= 45 || horizontal <= -45){
+    	} else if(horizontal > horizontall || horizontal < -horizontall){
     		this.velocity.x = 0;
     	}
     },
