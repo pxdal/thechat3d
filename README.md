@@ -17,7 +17,7 @@ On Windows:
 
 Step 3: run server.js from shell as administrator `> node server.js`
 
-Note that hosting on Apple hasn't been tested, and will remain that way because I don't have a Apple computer nor do I plan on getting one.  Proceed with caution.
+Note that hosting on Apple hasn't been tested, and will remain that way because I don't have an Apple computer nor do I plan on getting one.  Proceed with caution.
 
 # Info
 Join the development discord server: https://discord.com/invite/KTCz4tU
