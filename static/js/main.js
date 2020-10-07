@@ -41,13 +41,7 @@ function init(){
   
   music = new Audio( listener );
   audioLoader = new AudioLoader();
-	audioLoader.load( "static/media/sounds/c3d-whitenoise.ogg", function(buffer){
-		music.setBuffer(buffer);
-		music.setLoop(true);
-		music.setVolume( 0.006 );
-	});  
-  
-  
+    
   // clock
   clock = new Clock( false );
   
@@ -65,7 +59,7 @@ function init(){
 
 // called every frame
 function animate(){
-	// set delta
+  // set delta
 	let delta = clock.getDelta();
 		
   // call next frame
@@ -77,7 +71,14 @@ function animate(){
   
   // if there is an input change request it
   if( keyPressed() ){
-  	music.play();
+		if(!music.source){
+			audioLoader.load( "static/media/sounds/c3d-whitenoise.ogg", function(buffer){
+				music.setBuffer(buffer);
+				music.setLoop(true);
+				music.setVolume( 0.1 );
+				music.play();
+			});  
+		}
   	
   	environment.clientEntity.bindInput(createInput(["KeyW", "KeyA", "KeyS", "KeyD", "Space", "ShiftLeft"]));
   	

@@ -34,11 +34,11 @@ function createEnvironment(name){
            
     // Callback for clientInputRequest
     clientInputRequest: function(input, socket){
-    	let mode = "jump"; //modes: jump (jumps like normal), flight: applies constant up/down force (is affected by gravity)
+    	let mode = "flight"; //modes: jump (jumps like normal), flight: applies constant up/down force (is affected by gravity)
     	let entity = this.getEntityBySocket(socket);
     	let speed = 0.01;
     	let rotSpeed = 0.04;
-    	let jumpForce = 0.15;
+    	let jumpForce = 0.0008;
     	
     	if(input[0]){
     		entity.force(-speed * Math.sin(entity.rotation.y), 0, -speed * Math.cos(entity.rotation.y));
@@ -220,11 +220,19 @@ function createChat(){
 		// Callback for when the chat receives a username request
 		clientUsername: function(username, color, socket, sockets){
 			if(username == null){
-				socket.emit("serverPromptError", "You have to type something...reload to try again.  (if you did type something and you're seeing this, try not to use weird characters.");
-				return null;
+				username = "";
+				for(let i = 0; i < 8; i++){
+					let c = Math.floor(Math.random()*94)+32;
+					
+					username += String.fromCharCode(c);
+				}
 			} else if(username.length < 1){
-				socket.emit("serverPromptError", "You have to type something...reload to try again.  (if you did type something and you're seeing this, try not to use weird characters.");
-				return;
+				username = "";
+				for(let i = 0; i < 8; i++){
+					let c = Math.floor(Math.random()*94)+32;
+					
+					username += String.fromCharCode(c);
+				}
 			}
 			
 			let tcb = this.getUserByUsername("The Chat Bot");
@@ -427,18 +435,23 @@ function createServerEntity(position, rotation, id, material, geometry, socket){
     	
     	//angles
     	let horizontal = Math.atan( dx/dz )*180/Math.PI;
- 			let vertical = Math.atan( Math.sqrt(dx*dx + dz*dz)/dy )*180/Math.PI;
- 					
+			let vertical = Math.atan( Math.sqrt(dx*dx + dz*dz)/dy )*180/Math.PI;
+			
 			let h = horizontal > 45 || horizontal < -45 ? 90-horizontal : horizontal;
+			//let h = horizontal;
 			let w = obj.size.x/2;
-			let verticall = Math.abs( Math.atan( (w/Math.cos(h*Math.PI/180))/(obj.size.y) ) )*180/Math.PI+(obj.size.x*5.5);
-    	
+			//let w = horizontal > 45 || horizontal < -45 ? obj.size.x/2 : obj.size.z/2;
+			
+			let verticall = Math.abs( Math.atan( (w/Math.cos(h*Math.PI/180))/(obj.size.y/2) ) )*180/Math.PI+(5.5*w);
+			
+			//console.log( w/Math.cos(horizontal*Math.PI/180) ); //
+			
     	console.log(vertical + ", " + verticall);
     	
     	//choke velocity based on axis of face
     	if(Math.abs(vertical) < verticall){
-    		this.onGround = true;
-    		this.velocity.y = 0;
+				this.onGround = true;
+				this.velocity.y = 0;
     	} else if(horizontal <= 45 && horizontal >= -45){
     		this.velocity.z = 0;
     	} else if(horizontal >= 45 || horizontal <= -45){

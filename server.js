@@ -20,7 +20,7 @@ let port = 8080; //set to 80 for public
 // main
 
 // constants
-let yborder = -50;
+const yborder = -30;
 
 // environment (+map)
 let environment = c3ds.createEnvironment("testEnvironment");
@@ -38,7 +38,7 @@ chat.pushUser(theChatBot);
 
 // game loop (60fps)
 
-let gravity = -0.01;
+let gravity = -0.00;
 
 let gameLoop = c3ds.createGameLoop(60, () => {	
 	// gravity
