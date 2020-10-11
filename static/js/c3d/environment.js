@@ -34,12 +34,17 @@ function createEnvironment(socket){
     },
     
     // Request the client entity be changed according to input
-    requestInput: function(){
+    sendInput: function(){
     	let client = this.clientEntity;
     	
-			this.socket.emit("clientInputRequest", client.input);
+			this.socket.emit("clientInputResponse", client.input);
 		},
     
+		// REQUEST METHODS //
+		clientInputRequest: function(){
+			this.sendInput();
+		},
+		
     // RESPONSE METHODS //
     
     // Callback for when an entity bound to the client is sent
@@ -82,7 +87,6 @@ function createEnvironment(socket){
     	this.map = objects;
     	this.renderMap();
     },
-    
     
     // UPDATE METHODS (called every frame) //
     

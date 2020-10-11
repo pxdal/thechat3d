@@ -40,9 +40,12 @@ chat.pushUser(theChatBot);
 
 let gravity = -0.01;
 
-let gameLoop = c3ds.createGameLoop(60, () => {	
+let gameLoop = c3ds.createGameLoop(65, () => {	
 	// gravity
 	environment.forceAll(0, gravity, 0);
+	
+	// input
+	environment.requestInputAll();
 	
 	// update entities
 	environment.update(yborder);
@@ -188,8 +191,8 @@ io.on("connection", socket => {
   	environment.serverEntityDynamicRequest(socket, id);
 	});
 	
-	socket.on("clientInputRequest", (input) => {
-		environment.clientInputRequest(input, socket);
+	socket.on("clientInputResponse", (input) => {
+		environment.clientInputResponse(input, socket);
 	});
 	
 	socket.on("clientUsername", (username) => {

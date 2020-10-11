@@ -1,13 +1,5 @@
 // Clientside script to manage server entities
 
-/*client --request-> server
-
-server = --request--
-
-server --data-> client 
-
-client = --data--
-*/
 
 // Creates an empty entity, with the exception of it's id
 function createEntity(id){
@@ -92,7 +84,7 @@ function clientEntity(entity, socket, camera){
 		bindInput: function(input){
 			this.input = input;
 		},		
-};
+	};
 	
 	return attach(entity, client);
 }

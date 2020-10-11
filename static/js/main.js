@@ -80,13 +80,13 @@ function animate(){
 			});  
 		}
   	
-  	environment.clientEntity.bindInput(createInput(["KeyW", "KeyA", "KeyS", "KeyD", "Space", "ShiftLeft"]));
-  	
-  	if(document.activeElement !== chat.inputElement) environment.requestInput();
+  	//if(document.activeElement !== chat.inputElement) environment.requestInput();
   	
   	chat.handleInput(keys);
   }
-
+	
+	if(document.activeElement !== chat.inputElement) environment.clientEntity.bindInput(createInput(["KeyW", "KeyA", "KeyS", "KeyD", "Space", "ShiftLeft"]));
+			
   // render the scene
   renderer.render( environment.scene, camera );
 	
@@ -161,6 +161,7 @@ socket.on("serverEntityPull", environment.serverEntityPull.bind(environment));
 socket.on("serverNewMessage", chat.serverNewMessage.bind(chat));
 socket.on("serverMapDataResponse", environment.serverMapDataResponse.bind(environment));
 socket.on("clientEntityIDResponse", clientEntityIDResponse);
+socket.on("clientInputRequest", environment.clientInputRequest.bind(environment));
 
 //window
 window.addEventListener("unload", unload);

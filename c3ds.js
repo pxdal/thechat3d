@@ -33,7 +33,7 @@ function createEnvironment(name){
     },
            
     // Callback for clientInputRequest
-    clientInputRequest: function(input, socket){
+    clientInputResponse: function(input, socket){
     	let mode = "jump"; //modes: jump (jumps like normal), flight: applies constant up/down force (is affected by gravity)
     	let entity = this.getEntityBySocket(socket);
     	let speed = 0.01;
@@ -111,7 +111,14 @@ function createEnvironment(name){
 				entity.update();
 			}
 		},
-		 
+		
+		requestInputAll: function(){
+			for(let i = 0; i < this.serverEntities.length; i++){
+				let entity = this.serverEntities[i];
+				
+				if(entity.socket) entity.inputRequest();
+			}
+		},
     
     // UTILS //
     
@@ -393,7 +400,7 @@ function createServerEntity(position, rotation, id, material, geometry, socket){
     	this.position.z += this.velocity.z;
     },
     
-    // returns true if self is colliding with another rectangular object
+    // returns true if self is colliding with another rectangular object (no rotation assumed)
     rrCollision: function(object){
     	return (this.position.x+this.size.x/2 > object.position.x-object.size.x/2 && this.position.x-this.size.x/2 < object.position.x+object.size.x/2 && this.position.z+this.size.z/2 > object.position.z-object.size.z/2 && this.position.z-this.size.z/2 < object.position.z+object.size.z/2 && this.position.y+this.size.y/2 > object.position.y-object.size.y && this.position.y-this.size.y/2 < object.position.y+object.size.y);
     },
@@ -419,7 +426,7 @@ function createServerEntity(position, rotation, id, material, geometry, socket){
       };
     },
     
-    // callback for when it's colliding with another object
+    // callback for when it's colliding with another object TODO: this is stupid fix it
     onCollide: function(obj){
     	this.storeVelocity();
     	this.velocity.x = obj.oldVelocity.x;
@@ -427,6 +434,7 @@ function createServerEntity(position, rotation, id, material, geometry, socket){
     	this.velocity.z = obj.oldVelocity.z;
     },
     
+		// TODO: this is stupid fix it
     onMapCollide: function(obj){
     	//quick math constants
     	let dx = obj.position.x-this.position.x;
@@ -439,7 +447,7 @@ function createServerEntity(position, rotation, id, material, geometry, socket){
 			
 			let vertical = Math.atan( Math.sqrt(dx*dx + dz*dz)/dy )*180/Math.PI;
 			
-			let h = horizontal > 45 || horizontal < -45 ? 90-horizontal : horizontal;
+			let h = horizontal > horizontall || horizontal < -horizontall ? 90-horizontal : horizontal;
 			let w = horizontal > horizontall || horizontal < -horizontall ? obj.size.x : obj.size.z;
 			let o = (w / ((obj.size.y+1)/(obj.size.y/2)) )/Math.cos(h*Math.PI/180);
 			
@@ -494,6 +502,11 @@ function createServerEntity(position, rotation, id, material, geometry, socket){
     		}
     	}
     },
+		
+		inputRequest: function(){
+			if(this.socket) this.socket.emit("clientInputRequest");
+		},
+		
     respawn: function(){
     	this.velocity.x = 0;
     	this.velocity.z = 0;
