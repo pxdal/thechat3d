@@ -7,7 +7,7 @@ const socket = io();
 let debug = true; //defaults to true
 
 // environment/camera/renderer
-let environment, chat, camera, listener, audioLoader, music, renderer, stats, clock;
+let environment, chat, camera, listener, audioLoader, music, renderer, stats, clock, pog;
 
 // camera
 let fov = 75;
@@ -17,8 +17,21 @@ let far = 1000;
 
 // textures
 let textureLoader = new TextureLoader();
-let textures = ["smiley.png", "stonks.png", "bigsmile.jpg"];
+let cubeMapLoader = new THREE.CubeTextureLoader();
+
+let textures = ["smiley.png", "stonks.png", "bigsmile.jpg", "pog_with_aug.jpg"];
 let textureCache = cacheTextures(textures, textureLoader);
+
+cubeMapLoader.setPath('static/media/textures/');
+
+pog = cubeMapLoader.load( [
+	'pog_with_aug.jpg',
+	'pog_with_aug.jpg',
+	'pog_with_aug.jpg',
+	'pog_with_aug.jpg',
+	'pog_with_aug.jpg',
+	'pog_with_aug.jpg'
+] );
 
 // input
 let inputListener = createInputListener();
@@ -64,10 +77,13 @@ function init(){
 function animate(){
   // set delta
 	let delta = clock.getDelta();
-		
+	
   // call next frame
   requestAnimationFrame( animate );
   
+	// set bg
+	environment.scene.background = pog;
+	
   environment.checkScene(); //adds entities to scene TODO make this not stupid
   
   environment.clientEntity.setCamera(); // sets the camera's position
