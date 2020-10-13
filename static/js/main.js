@@ -20,6 +20,9 @@ let textureLoader = new TextureLoader();
 let textures = ["smiley.png", "stonks.png", "bigsmile.jpg"];
 let textureCache = cacheTextures(textures, textureLoader);
 
+// input
+let inputListener = createInputListener();
+
 // main
 init();
 
@@ -70,7 +73,7 @@ function animate(){
   environment.clientEntity.setCamera(); // sets the camera's position
   
   // if there is an input change request it
-  if( keyPressed() ){
+  if( inputListener.keyPressed() ){
 		if(!music.source){
 			audioLoader.load( "static/media/sounds/c3d-whitenoise.ogg", function(buffer){
 				music.setBuffer(buffer);
@@ -79,13 +82,11 @@ function animate(){
 				music.play();
 			});  
 		}
-  	
-  	//if(document.activeElement !== chat.inputElement) environment.requestInput();
-  	
-  	chat.handleInput(keys);
+	
+  	chat.handleInput(inputListener.keys);
   }
 	
-	if(document.activeElement !== chat.inputElement) environment.clientEntity.bindInput(createInput(["KeyW", "KeyA", "KeyS", "KeyD", "Space", "ShiftLeft"]));
+	if(document.activeElement !== chat.inputElement) environment.clientEntity.bindInput(inputListener.createInput(["KeyW", "KeyA", "KeyS", "KeyD", "Space", "ShiftLeft"]));
 			
   // render the scene
   renderer.render( environment.scene, camera );

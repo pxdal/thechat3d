@@ -6,8 +6,12 @@ function initRenderer(){
   
   renderer.setPixelRatio( window.devicePixelRatio );
   renderer.setSize(width, height);
+
   document.body.appendChild( renderer.domElement );
-  
+	
+	renderer.domElement.requestPointerLock = renderer.domElement.requestPointerLock || renderer.domElement.mozRequestPointerLock;  
+	renderer.domElement.requestPointerLock();
+	
   return renderer;
 };
 
