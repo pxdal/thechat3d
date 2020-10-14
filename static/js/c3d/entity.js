@@ -17,8 +17,6 @@ function createEntity(id){
 			this.material = new MeshBasicMaterial({color: material});
 			let faceMaterial = new MeshBasicMaterial({map: face});
 			
-			
-			
 			let materials = [
 				this.material,
 				this.material,
@@ -35,14 +33,18 @@ function createEntity(id){
 		//Takes in dynamic values
 		dynamic: function(position, rotation){
 			this.position = new Vector3(position.x, position.y, position.z);
-			this.rotation = new Euler(rotation.x, rotation.y, rotation.z);
-	
+			this.rotation = new Euler(0, 0, 0, "YXZ");
+			
+			this.rotation.x = rotation.x;
+			this.rotation.y = rotation.y;
+			this.rotation.z = rotation.z;
+			
 			if(this.mesh){
 				this.mesh.position.setX(position.x);
 				this.mesh.position.setY(position.y);
 				this.mesh.position.setZ(position.z);
 				
-				this.mesh.rotation.set(rotation.x, rotation.y, rotation.z);
+				this.mesh.setRotationFromEuler(this.rotation);
 			}
 		},
 		
@@ -72,12 +74,12 @@ function clientEntity(entity, socket, camera){
 		geometry: undefined,
 		
 		setCamera: function(){
-			if(this.position && this.rotation){
+			if(this.position && this.rotation && this.camera){
 				this.camera.position.setX(this.position.x);
 				this.camera.position.setY(this.position.y);
 				this.camera.position.setZ(this.position.z);
 				
-				this.camera.rotation.set(this.rotation.x, this.rotation.y, this.rotation.z);
+				this.camera.setRotationFromEuler(this.rotation);
 			}
 		},
 		

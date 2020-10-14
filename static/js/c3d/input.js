@@ -5,11 +5,14 @@ let listeners = []; //stores all active listeners
 // creates an input listener (locks the mouse if lock = true)
 function createInputListener(){
 	let l = {
+		callbacks: {},
 		keys: {},
 		mouse: { //stores the mouseX and mouseY as well as the change between each between mouse movements ( amount moved/size of screen )
 			position: {
 				x: 0,
 				y: 0,
+				px: 0,
+				py: 0,
 			},
 			delta: {
 				x: 0,
@@ -23,25 +26,50 @@ function createInputListener(){
 			this.keys[e.code] = false;
 		},
 		mousemove: function(e){
-			this.mouse.position.x = e.x;
-			this.mouse.position.y = e.y;
+			this.mouse.position.px = this.mouse.position.x;
+			this.mouse.position.py = this.mouse.position.y;
 			
-			this.mouse.delta.x = e.movementX;
-			this.mouse.delta.y = e.movementY;
+			this.mouse.position.x += e.movementX;
+			this.mouse.position.y += e.movementY;
+		},
+		calculateDelta: function(sensitivity){
+			this.mouse.delta.x = (this.mouse.position.x-this.mouse.position.px)*sensitivity;
+			this.mouse.delta.y = (this.mouse.position.y-this.mouse.position.py)*sensitivity;
+			
+			this.mouse.position.px = this.mouse.position.x;
+			this.mouse.position.py = this.mouse.position.y;
 		},
 		keyPressed: function(){
 			return Object.values(this.keys).includes(true);
 		},
 		createInput: function(codes){
 			let out = [];
-	
+			
 			for(let i = 0; i < codes.length; i++){
 				let code = codes[i];
 				
-				out.push(this.keys[code] || false);
+				if(code == "mousePos"){
+					out.push(this.mouse.position || false);
+				} else if(code == "mouseDelta"){
+					out.push(this.mouse.delta || false);
+				} else {
+					out.push(this.keys[code] || false);
+				}
 			}
 			
 			return out;
+		},
+		addCallback: function(e, callback){
+			this.removeCallback(e);
+			
+			this.callbacks[e] = callback;
+			
+			window.addEventListener(e, callback);
+		},
+		removeCallback: function(e){
+			if(this.callbacks[e]){
+				window.removeEventListener(e, this.callbacks[e]);
+			}
 		},
 	};
 	

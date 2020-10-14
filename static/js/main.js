@@ -43,7 +43,9 @@ init();
 function init(){
   // environment
   environment = createEnvironment(socket);
-  environment.scene.background = new THREE.Color( 0x000000 );
+	// set bg
+  //environment.scene.background = new THREE.Color( 0x000000 );
+	environment.scene.background = pog;
 	
 	// chat
 	chat = createChat(socket);
@@ -54,7 +56,8 @@ function init(){
   camera = new PerspectiveCamera( fov, aspect, near, far );
   listener = new AudioListener();
   camera.add( listener );
-  
+	
+	// music
   music = new Audio( listener );
   audioLoader = new AudioLoader();
     
@@ -67,7 +70,14 @@ function init(){
 	
   // renderer
   renderer = initRenderer();
-  
+		  
+	// input
+	inputListener.addCallback("click", (e) => {
+		renderer.domElement.requestPointerLock = renderer.domElement.requestPointerLock || renderer.domElement.mozRequestPointerLock;
+		
+		renderer.domElement.requestPointerLock();
+	});
+	
   socket.emit("clientReady");
   
   chat.setUsername();
@@ -80,9 +90,6 @@ function animate(){
 	
   // call next frame
   requestAnimationFrame( animate );
-  
-	// set bg
-	environment.scene.background = pog;
 	
   environment.checkScene(); //adds entities to scene TODO make this not stupid
   
@@ -101,9 +108,13 @@ function animate(){
 	
   	chat.handleInput(inputListener.keys);
   }
+
+	if(document.activeElement !== chat.inputElement && document.pointerLockElement === renderer.domElement){
+		environment.clientEntity.bindInput(inputListener.createInput(["KeyW", "KeyA", "KeyS", "KeyD", "Space", "ShiftLeft", "mouseDelta"]));
 	
-	if(document.activeElement !== chat.inputElement) environment.clientEntity.bindInput(inputListener.createInput(["KeyW", "KeyA", "KeyS", "KeyD", "Space", "ShiftLeft"]));
-			
+		inputListener.calculateDelta(0.5);
+	}
+	
   // render the scene
   renderer.render( environment.scene, camera );
 	

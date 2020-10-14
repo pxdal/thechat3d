@@ -40,6 +40,12 @@ function createEnvironment(name){
     	let rotSpeed = 0.04;
     	let jumpForce = 0.15;
     	
+			if(input[6]){
+				entity.rotation.x -= input[6].y/100;
+				entity.rotation.y -= input[6].x/100;
+			}
+			
+			// forward/backward
     	if(input[0]){
     		entity.force(-speed * Math.sin(entity.rotation.y), 0, -speed * Math.cos(entity.rotation.y));
     	}
@@ -47,23 +53,38 @@ function createEnvironment(name){
     		entity.force(speed * Math.sin(entity.rotation.y), 0, speed * Math.cos(entity.rotation.y));
     	}
     	
-    	if(input[1]){
+			//strafing (mouse)
+			if(input[1]){
+				entity.force(-speed * Math.cos(entity.rotation.y), 0, speed * Math.sin(entity.rotation.y));
+			}
+			if(input[3]){
+				entity.force(speed * Math.cos(entity.rotation.y), 0, -speed * Math.sin(entity.rotation.y));
+			}
+			
+			// rotation (no-mouse)
+    	/*if(input[1]){
     		entity.rotation.y += rotSpeed;
     	}
     	if(input[3]){
     		entity.rotation.y -= rotSpeed;
-    	}
+    	}*/
+			
+			// jump (jump)/fly (flight)
     	if(input[4]){
 	  		if(entity.onGround || mode == "flight"){
 	  			entity.force(0, jumpForce, 0);
 	  			entity.onGround = false;
 	  		}
     	}
+			
+			//descend (flight)
     	if(input[5]){
     		if(mode == "flight"){
     			entity.force(0, -jumpForce, 0);
     		}
     	}
+			
+			
     },
     
     
@@ -364,6 +385,7 @@ function createServerEntity(position, rotation, id, material, geometry, socket){
   return {
     position: position,
     rotation: rotation,
+		cameraRotation: rotation,
     size: {
     	x: 1,
     	y: 1,

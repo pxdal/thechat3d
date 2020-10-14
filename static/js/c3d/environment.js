@@ -9,9 +9,6 @@ function initRenderer(){
 
   document.body.appendChild( renderer.domElement );
 	
-	renderer.domElement.requestPointerLock = renderer.domElement.requestPointerLock || renderer.domElement.mozRequestPointerLock;  
-	renderer.domElement.requestPointerLock();
-	
   return renderer;
 };
 
