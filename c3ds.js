@@ -644,6 +644,29 @@ function createMap(data){
 	return r;
 }
 
+// Creates a trigger manager (checks and handles triggers)
+function createTriggerManager(e, callback){
+	return {
+		triggers: [], //all active triggers
+		
+		createTrigger: function(condition, callback){
+			let trigger = {
+				condition: condition,
+				callback: callback,
+				check: function(){
+					if(condition()){
+						callback();
+					}
+				}
+			};
+		},
+		
+		checkTriggers: function(){ //checks all active triggers
+			
+		}
+	};
+}
+
 // returns true if obj1 and obj2 are colliding, and are cubes (NOTE: assumes position is center of cube)
 function rrCol(obj1, obj2){
 	return (obj1.position.x+obj1.size.x/2 > obj2.position.x-obj2.size.x/2 && obj1.position.x-obj1.size.x/2 < obj2.position.x+obj2.size.x/2 && obj1.position.z+obj1.size.z/2 > obj2.position.z-obj2.size.z/2 && obj1.position.z-obj1.size.z/2 < obj2.position.z+obj2.size.z/2 && obj1.position.y+obj1.size.y/2 > obj2.position.y-obj2.size.y/2 && obj1.position.y-obj1.size.y/2 < obj2.position.y+obj2.size.y/2);
@@ -656,4 +679,5 @@ module.exports = {
   createChat: createChat,
   createGameLoop: createGameLoop,
   createMap: createMap,
+	createTriggerManager: createTriggerManager,
 };

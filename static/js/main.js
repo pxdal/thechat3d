@@ -19,7 +19,7 @@ let far = 1000;
 let textureLoader = new TextureLoader();
 let cubeMapLoader = new THREE.CubeTextureLoader();
 
-let textures = ["smiley.png", "stonks.png", "bigsmile.jpg", "pog_with_aug.jpg"];
+let textures = ["smiley.png", "stonks.png", "bigsmile.jpg", "pog_with_aug.jpg", "space.jpg", "ahh.png"];
 let textureCache = cacheTextures(textures, textureLoader);
 
 cubeMapLoader.setPath('static/media/textures/');
@@ -45,7 +45,7 @@ function init(){
   environment = createEnvironment(socket);
 	// set bg
   //environment.scene.background = new THREE.Color( 0x000000 );
-	environment.scene.background = pog;
+	environment.scene.background = textureCache.space;
 	
 	// chat
 	chat = createChat(socket);

@@ -15,6 +15,41 @@ function createEntity(id){
 		//Takes in cache values
 		cache: function(material, geometry, face){
 			this.material = new MeshBasicMaterial({color: material});
+			
+			// create a buffer with color data
+
+			/*let size = 1;
+			let data = new Uint8Array( 4 * size );
+
+			let r = Math.floor( this.material.color.r * 255 );
+			let g = Math.floor( this.material.color.g * 255 );
+			let b = Math.floor( this.material.color.b * 255 );
+
+			for (let i = 0; i < size; i++) {
+
+				let stride = i * 3;
+
+				data[ stride ] = r;
+				data[ stride + 1 ] = g;
+				data[ stride + 2 ] = b;
+			}
+
+			let materialTexture = new DataTexture(data, 1, 1, THREE.RGBFormat);
+			
+			let vertShader = document.getElementById("blend-v-shader").innerHTML;
+			let fragShader = document.getElementById("blend-f-shader").innerHTML;
+			
+			let uniforms = {
+				tOne: { type: "t", value: materialTexture},
+				tSec: { type: "t", value: face}
+			};
+
+			let faceMaterial = new ShaderMaterial({
+				uniforms: uniforms,
+				vertexShader: vertShader,
+				fragmentShader: fragShader
+			});*/
+			
 			let faceMaterial = new MeshBasicMaterial({map: face});
 			
 			let materials = [

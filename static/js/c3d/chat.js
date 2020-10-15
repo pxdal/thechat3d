@@ -101,7 +101,7 @@ function createChat(socket){
 			}
 
 			if(input.Enter){
-				if(document.activeElement !== this.inputElement) return;
+				//if(document.activeElement !== this.inputElement) return;
 				
 				this.inputElement.blur();
 				
