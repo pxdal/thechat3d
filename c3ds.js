@@ -24,14 +24,13 @@ function createEnvironment(name){
       let entity = this.getEntityByID(id);
       
       if(entity == null){
-      	console.log("A dynamic request was made for an invalid entity: " + id);
       	return null;
       }
       let dynamic = entity.dynamic();
       
       socket.emit("serverEntityDynamicResponse", dynamic, id);
     },
-           
+
     // Callback for clientInputRequest
     clientInputResponse: function(input, socket){
     	let mode = "jump"; //modes: jump (jumps like normal), flight: applies constant up/down force (is affected by gravity)
@@ -39,9 +38,23 @@ function createEnvironment(name){
     	let speed = 0.01;
     	let rotSpeed = 0.04;
     	let jumpForce = 0.15;
-    	
+    	let sensitivity = 100;
+			
 			if(input[6]){
-				entity.rotation.x -= input[6].y/100;
+				if(entity.rotation.x > Math.PI/2 || entity.rotation.x < -Math.PI/2){
+					entity.rotation.x = (entity.rotation.x/Math.abs(entity.rotation.x)) * Math.PI/2;
+				} else if(entity.rotation.x == Math.PI/2){
+					if(input[6].y/Math.abs(input[6].y) == 1){
+						entity.rotation.x -= input[6].y/sensitivity;
+					}
+				} else if(entity.rotation.x == -Math.PI/2){
+					if(input[6].y/Math.abs(input[6].y) == -1){
+						entity.rotation.x -= input[6].y/sensitivity;
+					}
+				} else {
+					entity.rotation.x -= input[6].y/sensitivity;
+				}
+				
 				entity.rotation.y -= input[6].x/100;
 			}
 			
@@ -60,15 +73,7 @@ function createEnvironment(name){
 			if(input[3]){
 				entity.force(speed * Math.cos(entity.rotation.y), 0, -speed * Math.sin(entity.rotation.y));
 			}
-			
-			// rotation (no-mouse)
-    	/*if(input[1]){
-    		entity.rotation.y += rotSpeed;
-    	}
-    	if(input[3]){
-    		entity.rotation.y -= rotSpeed;
-    	}*/
-			
+
 			// jump (jump)/fly (flight)
     	if(input[4]){
 	  		if(entity.onGround || mode == "flight"){
@@ -83,8 +88,6 @@ function createEnvironment(name){
     			entity.force(0, -jumpForce, 0);
     		}
     	}
-			
-			
     },
     
     
@@ -117,7 +120,7 @@ function createEnvironment(name){
 				entity.checkCollisions(this.serverEntities);
 				
 				//check collisions of map
-				entity.checkMapCollisions(this.map.formatData());
+				entity.checkMapCollisions(this.map.objects);
 				
 				if(entity.position.y < yborder){
 					entity.respawn();
@@ -137,7 +140,9 @@ function createEnvironment(name){
 			for(let i = 0; i < this.serverEntities.length; i++){
 				let entity = this.serverEntities[i];
 				
-				if(entity.socket) entity.inputRequest();
+				if(entity.socket){
+					entity.inputRequest();
+				}
 			}
 		},
     
@@ -380,26 +385,75 @@ function createChat(){
 	};
 }
 
-// creates a server entity
-function createServerEntity(position, rotation, id, material, geometry, socket){
+// Quicky makes an object containing: a) the event b) the entity being triggered
+function createTriggerOutput(e, entity){
+	return {
+		event: e,
+		entity: entity
+	};
+}
+
+// creates a base server entity (pretty useless, mainly just used to define base values for other extensions of this class)
+function createServerEntity(position, rotation, size, id){
   return {
+		enabled: true, // whether or not the entity is enabled (will stay in serverEntities but will be invisible and won't be updated)
     position: position,
     rotation: rotation,
-		cameraRotation: rotation,
-    size: {
-    	x: 1,
-    	y: 1,
-    	z: 1,
-    },
-    velocity: {x: 0, y: 0, z: 0},
-    oldVelocity: {x: 0, y: 0, z: 0}, //buffer which stores the velocity before it gets changed (for collisions)
+		size: size,
     id: id,
-    material: material,
-    geometry: geometry,
-    socket: socket, //socket the entity is bound too (optional, only for entities bound to clients)
-    onGround: false, //gamestate which stores whether or not the player is touching the ground
+    onGround: false, //gamestate which stores whether or not the entity is touching the ground
+		outputs: [], //triggers for other entities/map objects
+
+    //Returns entity values that the server expects the client to cache (static values)
+    cache: function(){
+    	let entity = this;
+    	
+      return {
+				size: entity.size,
+      };
+    },
     
-    // store current velocity into oldVelocity (called before every velocity change)
+    //Returns entity values that the server expects to change often (dynamic values)
+    dynamic: function(){
+      let entity = this;
+      
+      //note that the vectors are turned into x, y, z values because it's not as big, so the server can send them faster
+      return {
+      	position: entity.position,
+      	rotation: entity.rotation
+      };
+    },
+		
+		// attach a trigger 
+		setTrigger: function(){
+			
+		}
+	};
+}
+
+// Create an entity that has physics
+function createPhysicsEntity(position, rotation, size, id, material, geometry){
+	let n = {
+		visible: true, //visiblity (defaults to true)
+		velocity: { //velocity defaults to 0
+			x: 0,
+			y: 0,
+			z: 0,
+		},
+		oldVelocity: {
+			x: 0,
+			y: 0,
+			z: 0,
+		},
+		material: material,
+		geometry: geometry,
+		
+		// sets visibility
+		setVisibility(visibility){
+			this.visible = visibility;
+		},
+		
+		// store current velocity into oldVelocity (called before every velocity change)
     storeVelocity: function(){
     	this.oldVelocity.x = this.velocity.x;
     	this.oldVelocity.y = this.velocity.y;
@@ -417,38 +471,31 @@ function createServerEntity(position, rotation, id, material, geometry, socket){
     
     // update position from velocity
     update: function(){
-    	this.position.x += this.velocity.x;
-    	this.position.y += this.velocity.y;
-    	this.position.z += this.velocity.z;
-    },
+			if(this.enabled){
+				this.position.x += this.velocity.x;
+				this.position.y += this.velocity.y;
+				this.position.z += this.velocity.z;
+			}
+		},
     
     // returns true if self is colliding with another rectangular object (no rotation assumed)
     rrCollision: function(object){
     	return (this.position.x+this.size.x/2 > object.position.x-object.size.x/2 && this.position.x-this.size.x/2 < object.position.x+object.size.x/2 && this.position.z+this.size.z/2 > object.position.z-object.size.z/2 && this.position.z-this.size.z/2 < object.position.z+object.size.z/2 && this.position.y+this.size.y/2 > object.position.y-object.size.y && this.position.y-this.size.y/2 < object.position.y+object.size.y);
     },
-    
-    //Returns entity values that the server expects the client to cache (static values)
-    cache: function(){
-    	let entity = this;
-    	
-      return {
-        material: entity.material,
-        geometry: entity.geometry,
-      };
-    },
-    
-    //Returns entity values that the server expects to change often (dynamic values)
-    dynamic: function(){
-      let entity = this;
-      
-      //note that the vectors are turned into x, y, z values because it's not as big, so the server can send them faster
-      return {
-      	position: entity.position,
-      	rotation: entity.rotation
-      };
-    },
-    
-    // callback for when it's colliding with another object TODO: this is stupid fix it
+		
+		cache: function(){
+			if(!this.visible) return;
+			
+			let entity = this;
+			
+			return {
+				material: entity.material,
+				geometry: entity.geometry,
+				size: entity.size,
+			};
+		},
+		
+		// callback for when it's colliding with another object TODO: this is stupid fix it
     onCollide: function(obj){
     	this.storeVelocity();
     	this.velocity.x = obj.oldVelocity.x;
@@ -485,8 +532,8 @@ function createServerEntity(position, rotation, id, material, geometry, socket){
     		this.velocity.x = 0;
     	}
     },
-    
-    // returns position in the next frame using oldVelocity (for checking collisions)
+		
+		// returns position in the next frame using oldVelocity (for checking collisions)
     nextFrame: function(){
     	return {
     		position: {
@@ -497,9 +544,11 @@ function createServerEntity(position, rotation, id, material, geometry, socket){
     		size: this.size,
     	};
     },
-    
-    // check if it's colliding with objects
+		
+		// check if it's colliding with entities
     checkCollisions: function(objects){
+			if(!this.enabled) return;
+			
     	for(let i = 0; i < objects.length; i++){
     		let obj = objects[i];
     		
@@ -512,6 +561,8 @@ function createServerEntity(position, rotation, id, material, geometry, socket){
     },
     
     checkMapCollisions: function(objects){
+			if(!this.enabled) return;
+			
     	this.onGround = false;
     
     	for(let i = 0; i < objects.length; i++){
@@ -519,24 +570,38 @@ function createServerEntity(position, rotation, id, material, geometry, socket){
     		
     		if(obj.id == this.id) continue;
     		
-    		if( rrCol(this.nextFrame(), obj.nextFrame()) ){
+    		if( rrCol(this.nextFrame(), obj) ){
     			this.onMapCollide(obj);
     		}
     	}
     },
 		
-		inputRequest: function(){
-			if(this.socket) this.socket.emit("clientInputRequest");
-		},
-		
-    respawn: function(){
+		respawn: function(){
     	this.velocity.x = 0;
     	this.velocity.z = 0;
     	this.position.x = 0.1;
     	this.position.y = 50;
     	this.position.z = -0.1;
     }
-  };
+	};
+	
+	return extend(createServerEntity(position, rotation, size, id), n);
+}
+
+// Create an entity controlled by a socket
+function createSocketBoundEntity(position, rotation, size, id, material, geometry, socket){
+	let n = {
+		socket: socket,
+		cameraRotation: rotation,
+		
+		inputRequest: function(){
+			if(!this.enabled) return;
+			
+			this.socket.emit("clientInputRequest");
+		},
+	};
+	
+	return extend(createPhysicsEntity(position, rotation, size, id, material, geometry), n);
 }
 
 function createGameLoop(fps, callback){
@@ -546,7 +611,7 @@ function createGameLoop(fps, callback){
 // Creates a map for the environment, can either be fed data at start or given with loadData functions
 function createMap(data){
 	let r = {
-		data: data == undefined ? null : data,
+		data: data == undefined ? false : data,
 		objects: [],
 		
 		
@@ -559,17 +624,17 @@ function createMap(data){
 		// LOAD METHODS //
 		
 		loadDataFromFile: function(filename){ //note: must be from root of server
-			fs.readFile(filename, (err, data) => {
-				if(err){
-					throw err;
-				}
-				
-				this.loadData(data);
-			});
+			console.log("Reading map data from " + filename + "...");
+			
+			let data = fs.readFileSync(filename);
+			
+			this.loadData(data);
 		},
 		
 		loadData: function(data){ //feeds data to this.data and parses (mainly just a callback for other load functions)
-			this.data = data;
+			console.log("Loading map data...");
+			
+			this.data = JSON.parse(data);
 			
 			this.parseData();
 		},
@@ -577,19 +642,12 @@ function createMap(data){
 		
 		// UTILITY METHODS //
 		
-		parseData: function(){ //parse the data into objects which are pushed to this.objects
-			let parsed = this.data.split("!");
+		parseData: function(){ //stores object data from map
+			console.log("Parsing map data...");
 			
-			for(let i = 0; i < parsed.length; i++){
-				let obj = parsed[i].replace(" ", "").split(",");
-				
-				for(let b = 0; b < obj.length; b++){
-					obj[b] = parseFloat(obj[b]);
-				}
-						
-				this.objects.push(obj);
-			}
+			this.objects = this.data.objects;
 			
+			console.log(this.objects.length + " objects parsed, map ready.");
 		},
 		
 		formatData: function(){ //formats the data like a server entity for collisions (NOTE: returns a seperate array, won't affect existing datA)
@@ -636,35 +694,10 @@ function createMap(data){
 			}
 			
 			return formatted;
-		}
+		},
 	};
-	
-	r.parseData();
 	
 	return r;
-}
-
-// Creates a trigger manager (checks and handles triggers)
-function createTriggerManager(e, callback){
-	return {
-		triggers: [], //all active triggers
-		
-		createTrigger: function(condition, callback){
-			let trigger = {
-				condition: condition,
-				callback: callback,
-				check: function(){
-					if(condition()){
-						callback();
-					}
-				}
-			};
-		},
-		
-		checkTriggers: function(){ //checks all active triggers
-			
-		}
-	};
 }
 
 // returns true if obj1 and obj2 are colliding, and are cubes (NOTE: assumes position is center of cube)
@@ -672,12 +705,28 @@ function rrCol(obj1, obj2){
 	return (obj1.position.x+obj1.size.x/2 > obj2.position.x-obj2.size.x/2 && obj1.position.x-obj1.size.x/2 < obj2.position.x+obj2.size.x/2 && obj1.position.z+obj1.size.z/2 > obj2.position.z-obj2.size.z/2 && obj1.position.z-obj1.size.z/2 < obj2.position.z+obj2.size.z/2 && obj1.position.y+obj1.size.y/2 > obj2.position.y-obj2.size.y/2 && obj1.position.y-obj1.size.y/2 < obj2.position.y+obj2.size.y/2);
 }
 
+//Attach the properties of child object to parent object, overwriting parent properties if child has them (essentially extends)
+function extend(parent, child){
+	let ckeys = Object.keys(child);
+	let cvalues = Object.values(child);
+
+	for(let i = 0; i < ckeys.length; i++){
+		let key = ckeys[i];
+		let value = cvalues[i];
+		
+		parent[key] = value;
+	}
+	
+	return parent; //it doesn't need to return but it does
+}
+
 // module
 module.exports = {
   createServerEntity: createServerEntity,
+	createPhysicsEntity: createPhysicsEntity,
+	createSocketBoundEntity: createSocketBoundEntity,
   createEnvironment: createEnvironment,
   createChat: createChat,
   createGameLoop: createGameLoop,
   createMap: createMap,
-	createTriggerManager: createTriggerManager,
 };

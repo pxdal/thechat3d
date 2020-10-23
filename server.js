@@ -12,6 +12,7 @@ const c3ds = require("./c3ds"); //"chat 3d server" module
 const app = express();
 const server = http.Server(app);
 const io = socket(server);
+
 let sockets = []; //stores sockets
 sockets.pull = pull; //TODO this is stupid
 
@@ -25,9 +26,12 @@ const yborder = -25;
 // environment (+map)
 let environment = c3ds.createEnvironment("testEnvironment");
 let chat = c3ds.createChat();
+let map = c3ds.createMap();
 
-environment.pushMap(c3ds.createMap("0,-0.5,0,20,1,20!6,0.8,-7,3,2,3!2,0.5,-7,2,1,4!6,2,-3,2,1,2!6.5,3,0.2,2,1,2!5.9,3.6,3.2,2,1,2!-5.5,0.05,-2,2,1,2!2.5,4.05,4,2,1,2!0,-4,0,23,0.001,0.001"));
-let formatted = environment.map.formatData();
+map.loadDataFromFile("map.json");
+
+environment.pushMap(map);
+
 
 // the chat bot
 let theChatBot = {
@@ -36,6 +40,10 @@ let theChatBot = {
 };
 chat.pushUser(theChatBot);
 
+// test entity
+let logan = c3ds.createPhysicsEntity({x: 1, y: 0.5, z: 2}, {x: 0, y: 0, z: 0}, {x: 0.3, y: 0.3, z: 0.3}, environment.generateID(), randomColor(), "box");
+//environment.pushServerEntity(logan);
+ 
 // game loop (60fps)
 
 let gravity = -0.01;
@@ -286,6 +294,46 @@ function randomColor(mode){
 	return Math.floor(Math.random() * 16777216);
 }
 
+//generates random spoky color
+function randomSpokyColor(){
+	let colors = [{"r": 255, "g": 132, "b": 0}, {"r": 200, "g": 0, "b": 255}, {"r": 255, "g": 225, "b": 0}];
+	
+	let index = (sockets.length-1) % colors.length;
+	let base = colors[index];
+	let offset = Math.floor(Math.random() * 20);
+	
+	base.r += index == 1 ? offset : 0;
+	base.g += offset;
+	base.b += index-1 == 1 ? offset * 5 : 0;
+	
+	return rgbToHex(base);
+}
+
+// convert rgb to hex
+function rgbToHex(color){
+	let r = zeroes(color.r.toString(16));
+	let g = zeroes(color.g.toString(16));
+	let b = zeroes(color.b.toString(16));
+	
+	console.log(r + ", " + g + ", " + b);
+	
+	let hex = r + g + b;
+	
+	console.log(hex);
+	
+	return parseInt(hex, 16);
+}
+
+//adds indexes shit idk
+function zeroes(hex){
+	hex = hex.replace("-", "");
+	if(hex.length == 1){
+		hex = "0" + hex;
+	}
+	
+	return hex;
+}
+
 //generates a random xyz coordinate from -(a/2) to (a/2)
 function randomCoords(mx, my, mz){
 	return {
@@ -304,7 +352,7 @@ function pull(element){
 
 //inits a client entity
 function initClientEntity(socket){
-	let clientEntity = c3ds.createServerEntity(randomCoords(16, 0, 16), randomCoords(0, Math.PI*2, 0), environment.generateID(), randomColor(), null, socket); //create a new entity for the client
+	let clientEntity = c3ds.createSocketBoundEntity(randomCoords(16, 0, 16), randomCoords(0, Math.PI*2, 0), {x: 1, y: 1, z: 1}, environment.generateID(), randomSpokyColor(), null, socket); //create a new entity for the client
 	
 	environment.pushServerEntity(clientEntity);
 	

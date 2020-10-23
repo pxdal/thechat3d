@@ -67,7 +67,7 @@ function createEnvironment(socket){
     serverEntityCacheResponse: function(cache, id, texture){
       let entity = this.getEntityByID(id);
       
-      entity.cache(cache.material, cache.geometry, texture);
+      entity.cache(cache.material, cache.geometry, cache.size, texture);
     },
     
     // Callback for the serverEntityDynamicResponse event, stores values
@@ -122,31 +122,31 @@ function createEnvironment(socket){
 		// MAP METHODS //
 		renderMap: function(){ //pushes map objects to scene (meant to be called once)
 			for(let i = 0; i < this.map.length; i++){
-				let objData = this.map[i];
+				let object = this.map[i];
 				
 				let position = {
-					x: objData[0],
-					y: objData[1],
-					z: objData[2],
+					x: object.position.x,
+					y: object.position.y,
+					z: object.position.z,
 				};
 				
 				let size = {
-					x: objData[3],
-					y: objData[4],
-					z: objData[5],
+					x: object.size.x,
+					y: object.size.y,
+					z: object.size.z,
 				};	
 				
-				let colorDif=Math.floor(Math.random() * 100);
+				let colorDif=Math.floor(Math.random() * 0);
 				
 				let geometry = new BoxGeometry(size.x, size.y, size.z);
-				let material = new MeshLambertMaterial({color: 0x3ef1f7-colorDif});
+				let material = new MeshLambertMaterial({color: parseInt(object.color)}); //0x3ef1f7
 				
-				let object = new Mesh(geometry, material);
-				object.position.x = position.x;
-				object.position.y = position.y;
-				object.position.z = position.z;
+				let objMesh = new Mesh(geometry, material);
+				objMesh.position.x = position.x;
+				objMesh.position.y = position.y;
+				objMesh.position.z = position.z;
 				
-				this.scene.add( object );
+				this.scene.add( objMesh );
 			}	
 			
 			let ambience = new AmbientLight(0x404040);

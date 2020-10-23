@@ -48,9 +48,9 @@ function createInputListener(){
 			for(let i = 0; i < codes.length; i++){
 				let code = codes[i];
 				
-				if(code == "mousePos"){
+				if(code == "MousePos"){
 					out.push(this.mouse.position || false);
-				} else if(code == "mouseDelta"){
+				} else if(code == "MouseDelta"){
 					out.push(this.mouse.delta || false);
 				} else {
 					out.push(this.keys[code] || false);

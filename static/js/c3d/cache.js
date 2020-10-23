@@ -1,0 +1,37 @@
+// manages textures
+
+function createCache(loader){
+	return {
+		path: "",
+		cache: [],
+		loader: loader,
+		
+		// sets the current loading path
+		setPath: function(path){
+			if(path[path.length-1] !== "/"){
+				console.warn("The path you've set doesn't end in a forward slash!  Paths should use forward slashes, and end with them, or there may be caching issues.");
+			}
+			
+			this.path = path;
+		},
+		
+		// combine the path and the file
+		pathTo: function(file){
+			return this.path + file;
+		},
+		
+		// caches textures from path
+		cache: function(files){
+			for(let i = 0; i < files.length; i++){
+				let t = this.loader.load( this.pathTo(files[i]) );
+				
+				this.cache[ files[i].replace(".", "").replace("png", "").replace("jpg", "").replace("jpeg", "") ] = t;
+			}
+		},
+		
+		// load the texture for the filename (can also directly access with this.cache)
+		load: function(name){
+			return this.cache[name];
+		}
+	};
+}

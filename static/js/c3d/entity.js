@@ -6,6 +6,7 @@ function createEntity(id){
 	return {
 		position: null,
 		rotation: null,
+		size: null,
 		id: id,
 		material: null,
 		geometry: null,
@@ -13,34 +14,18 @@ function createEntity(id){
 		scene: false,
 
 		//Takes in cache values
-		cache: function(material, geometry, face){
+		cache: function(material, geometry, size, face){
 			this.material = new MeshBasicMaterial({color: material});
 			
-			// create a buffer with color data
-
-			/*let size = 1;
-			let data = new Uint8Array( 4 * size );
-
-			let r = Math.floor( this.material.color.r * 255 );
-			let g = Math.floor( this.material.color.g * 255 );
-			let b = Math.floor( this.material.color.b * 255 );
-
-			for (let i = 0; i < size; i++) {
-
-				let stride = i * 3;
-
-				data[ stride ] = r;
-				data[ stride + 1 ] = g;
-				data[ stride + 2 ] = b;
-			}
-
-			let materialTexture = new DataTexture(data, 1, 1, THREE.RGBFormat);
+			this.size = size;
+			
+			let mat = this.materialTexture();
 			
 			let vertShader = document.getElementById("blend-v-shader").innerHTML;
 			let fragShader = document.getElementById("blend-f-shader").innerHTML;
 			
 			let uniforms = {
-				tOne: { type: "t", value: materialTexture},
+				tOne: { type: "t", value: mat},
 				tSec: { type: "t", value: face}
 			};
 
@@ -48,9 +33,9 @@ function createEntity(id){
 				uniforms: uniforms,
 				vertexShader: vertShader,
 				fragmentShader: fragShader
-			});*/
+			});
 			
-			let faceMaterial = new MeshBasicMaterial({map: face});
+			//let faceMaterial = this.material;
 			
 			let materials = [
 				this.material,
@@ -61,7 +46,7 @@ function createEntity(id){
 				faceMaterial,
 			];
 			
-			this.geometry = new BoxGeometry();
+			this.geometry = new BoxGeometry(this.size.x, this.size.y, this.size.z);
 			this.mesh = new Mesh( this.geometry, materials);
 		},
 		
@@ -79,13 +64,36 @@ function createEntity(id){
 				this.mesh.position.setY(position.y);
 				this.mesh.position.setZ(position.z);
 				
-				this.mesh.setRotationFromEuler(this.rotation);
+				let rot = new Euler(0, this.rotation.y, 0);
+				
+				this.mesh.setRotationFromEuler(rot);
 			}
 		},
 		
 		//Whether the entity is ready to be pushed into the scene or not
 		ready: function(){
 			return (this.position !== null && this.rotation !== null && this.mesh !== null);
+		},
+		
+		//returns texture for material
+		materialTexture: function(){
+			let s = 1;
+			let data = new Uint8Array( 3 * s );
+
+			let r = Math.floor( this.material.color.r * 255 );
+			let g = Math.floor( this.material.color.g * 255 );
+			let b = Math.floor( this.material.color.b * 255 );
+
+			for (let i = 0; i < s; i++) {
+
+				let stride = i * 3;
+
+				data[ stride ] = r;
+				data[ stride + 1 ] = g;
+				data[ stride + 2 ] = b;
+			}
+
+			return new DataTexture(data, 1, 1, THREE.RGBFormat);
 		},
 		
 		//Disposes of geometries and materials

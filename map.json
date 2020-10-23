@@ -1,0 +1,122 @@
+{
+	"name": "Test Map",
+	"objects": [{
+		"position": {
+			"x": 0,
+			"y": -0.5,
+			"z": 0
+		},
+		"rotation": {},
+		"size": {
+			"x": 20,
+			"y": 1,
+			"z": 20
+		},
+		"color": "0x780cb0"
+	}, {
+		"position": {
+			"x": 6,
+			"y": 0.8,
+			"z": -7
+		},
+		"rotation": {},
+		"size": {
+			"x": 3,
+			"y": 2,
+			"z": 3
+		},
+		"color": "0xe37d17"
+	}, {
+		"position": {
+			"x": 2,
+			"y": 0.5,
+			"z": -7
+		},
+		"rotation": {},
+		"size": {
+			"x": 2,
+			"y": 1,
+			"z": 4
+		},
+		"color": "0xe37d17"
+	}, {
+		"position": {
+			"x": 6,
+			"y": 2,
+			"z": -3
+		},
+		"rotation": {},
+		"size": {
+			"x": 2,
+			"y": 1,
+			"z": 2 
+		},
+		"color": "0xe37d17"
+	}, {
+		"position": {
+			"x": 6.5,
+			"y": 3,
+			"z": 0.2
+		},
+		"rotation": {},
+		"size": {
+			"x": 2,
+			"y": 1,
+			"z": 2
+		},
+		"color": "0xe37d17"
+	}, {
+		"position": {
+			"x": 5.9,
+			"y": 3.6,
+			"z": 3.2
+		},
+		"rotation": {},
+		"size": {
+			"x": 2,
+			"y": 1,
+			"z": 2
+		},
+		"color": "0xe37d17"
+	}, {
+		"position": {
+			"x": -5.5,
+			"y": 0.05,
+			"z": -2
+		},
+		"rotation": {},
+		"size": {
+			"x": 2,
+			"y": 1,
+			"z": 2
+		},
+		"color": "0xe37d17"
+	}, {
+		"position": {
+			"x": 2.5,
+			"y": 4.05,
+			"z": 4
+		},
+		"rotation": {},
+		"size": {
+			"x": 2,
+			"y": 1,
+			"z": 2
+		},
+		"color": "0xe37d17"
+	}, {
+		"position": {
+			"x": -1,
+			"y": 4.05,
+			"z": 4
+		},
+		"rotation": {},
+		"size": {
+			"x": 1.5,
+			"y": 0.001,
+			"z": 0.001
+		},
+		"color": "0xe37d17"
+	}],
+	"entities": []
+}

@@ -19,18 +19,28 @@ let far = 1000;
 let textureLoader = new TextureLoader();
 let cubeMapLoader = new THREE.CubeTextureLoader();
 
-let textures = ["smiley.png", "stonks.png", "bigsmile.jpg", "pog_with_aug.jpg", "space.jpg", "ahh.png"];
-let textureCache = cacheTextures(textures, textureLoader);
+let textures = ["smiley.png", "stonks.png", "space.jpg", "ahh.png"];
+let halloweenTextures = ["stolen_skybox.png", "spoky.png"];
 
-cubeMapLoader.setPath('static/media/textures/');
+let textureCache = createCache(textureLoader);
+
+// load textures
+textureCache.setPath("static/media/textures/ordinary/");
+textureCache.cache(textures);
+
+textureCache.setPath("static/media/textures/halloween_event/");
+textureCache.cache(halloweenTextures);
+
+
+cubeMapLoader.setPath('static/media/textures/halloween_event/bg/');
 
 pog = cubeMapLoader.load( [
-	'pog_with_aug.jpg',
-	'pog_with_aug.jpg',
-	'pog_with_aug.jpg',
-	'pog_with_aug.jpg',
-	'pog_with_aug.jpg',
-	'pog_with_aug.jpg'
+	'px.jpg',
+	'nx.jpg',
+	'py.jpg',
+	'ny.jpg',
+	'pz.jpg',
+	'nz.jpg'
 ] );
 
 // input
@@ -43,9 +53,8 @@ init();
 function init(){
   // environment
   environment = createEnvironment(socket);
-	// set bg
-  //environment.scene.background = new THREE.Color( 0x000000 );
-	environment.scene.background = textureCache.space;
+	//set bg
+	environment.scene.background = pog;
 	
 	// chat
 	chat = createChat(socket);
@@ -110,7 +119,7 @@ function animate(){
   }
 
 	if(document.activeElement !== chat.inputElement && document.pointerLockElement === renderer.domElement){
-		environment.clientEntity.bindInput(inputListener.createInput(["KeyW", "KeyA", "KeyS", "KeyD", "Space", "ShiftLeft", "mouseDelta"]));
+		environment.clientEntity.bindInput(inputListener.createInput(["KeyW", "KeyA", "KeyS", "KeyD", "Space", "ShiftLeft", "MouseDelta"]));
 	
 		inputListener.calculateDelta(0.5);
 	}
@@ -130,7 +139,7 @@ function animate(){
 	}
 	
 	if(environment.clientEntity.position !== null){
-		chat.updateDebug(environment.clientEntity.position.x, environment.clientEntity.position.y, environment.clientEntity.position.z);
+		chat.updateDebug(environment.clientEntity.position.x, environment.clientEntity.position.y, environment.clientEntity.position.z, environment.clientEntity.rotation.x);
 	}
 	
 	// update stats
@@ -182,7 +191,7 @@ function clientEntityIDResponse(id){
 socket.on("serverPromptError", serverPromptError);
 socket.on("serverEntityIDResponse", environment.serverEntityIDResponse.bind(environment)); //bind environment so "this" calls aren't screwed
 socket.on("serverEntityCacheResponse", (cache, id) => {
-	environment.serverEntityCacheResponse(cache, id, textureCache.bigsmile);
+	environment.serverEntityCacheResponse(cache, id, textureCache.load("spoky"));
 });
 socket.on("serverEntityDynamicResponse", environment.serverEntityDynamicResponse.bind(environment));
 socket.on("serverEntityPull", environment.serverEntityPull.bind(environment));

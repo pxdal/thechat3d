@@ -48,7 +48,7 @@ function createChat(socket){
 		},
 		
 		// Update debug elememt
-		updateDebug: function(x, y, z){
+		updateDebug: function(x, y, z, yrot){
 			this.debugElement.textContent = "x: " + x.toFixed(2) + ", y: " + y.toFixed(2) + ", z: " + z.toFixed(2);
 		},
 		
@@ -105,9 +105,7 @@ function createChat(socket){
 				
 				this.inputElement.blur();
 				
-				if(this.username !== null){
-					this.newMessage();
-				}
+				this.newMessage();
 			}
 		}
 	};
