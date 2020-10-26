@@ -130,9 +130,10 @@ function createEnvironment(name){
 			for(let i = 0; i < this.serverEntities.length; i++){
 				let entity = this.serverEntities[i];
 				
-				entity.force(-entity.velocity.x/10, 0, -entity.velocity.z/10);
-				
-				entity.update();
+				if(entity.type >= 1){
+					if(entity.speedcap) entity.force(-entity.velocity.x/10, 0, -entity.velocity.z/10);
+					entity.update();
+				}
 			}
 		},
 		
@@ -385,24 +386,17 @@ function createChat(){
 	};
 }
 
-// Quicky makes an object containing: a) the event b) the entity being triggered
-function createTriggerOutput(e, entity){
-	return {
-		event: e,
-		entity: entity
-	};
-}
-
 // creates a base server entity (pretty useless, mainly just used to define base values for other extensions of this class)
 function createServerEntity(position, rotation, size, id){
   return {
+		type: 0,
 		enabled: true, // whether or not the entity is enabled (will stay in serverEntities but will be invisible and won't be updated)
-    position: position,
+		position: position,
     rotation: rotation,
 		size: size,
     id: id,
     onGround: false, //gamestate which stores whether or not the entity is touching the ground
-		outputs: [], //triggers for other entities/map objects
+		triggers: [], //triggers for other entities/map objects
 
     //Returns entity values that the server expects the client to cache (static values)
     cache: function(){
@@ -424,17 +418,38 @@ function createServerEntity(position, rotation, size, id){
       };
     },
 		
-		// attach a trigger 
-		setTrigger: function(){
+		//function to call at the start (or in some cases within) a triggerable function.  this will then fire all outputs when the function is called
+		checkTriggers: function(action, parameters){
+			for(let i = 0; i < this.triggers.length; i++){
+				let trigger = this.triggers[i];
+				
+				if(trigger.action == action){
+					trigger.output(this, parameters, trigger.parameters); // passes this and the entities to output by default
+				}
+			}
+		},
+		
+		// create a trigger
+		createTrigger: function(parameters, action, output){
+			let t = {
+				parameters: parameters,
+				action: action,
+				output: output
+			};
 			
+			this.triggers.push(t);
 		}
 	};
 }
 
 // Create an entity that has physics
-function createPhysicsEntity(position, rotation, size, id, material, geometry){
+function createPhysicsEntity(position, rotation, size, id, material, model, geometry, interactive, face){
 	let n = {
+		type: 1,
 		visible: true, //visiblity (defaults to true)
+		interactive: interactive,
+		speedcap: true, //whether or not to apply a cap to it's velocity (looking to change this to a value in the future)
+		face: face,
 		velocity: { //velocity defaults to 0
 			x: 0,
 			y: 0,
@@ -446,10 +461,13 @@ function createPhysicsEntity(position, rotation, size, id, material, geometry){
 			z: 0,
 		},
 		material: material,
+		model: model,
 		geometry: geometry,
 		
 		// sets visibility
 		setVisibility(visibility){
+			this.checkTriggers("setVisibility");
+			
 			this.visible = visibility;
 		},
 		
@@ -462,6 +480,8 @@ function createPhysicsEntity(position, rotation, size, id, material, geometry){
     
     // apply a vector of force to this entity
     force: function(x, y, z){
+			this.checkTriggers("force");
+			
     	this.storeVelocity();
     	
     	this.velocity.x += x;
@@ -491,16 +511,28 @@ function createPhysicsEntity(position, rotation, size, id, material, geometry){
 			return {
 				material: entity.material,
 				geometry: entity.geometry,
+				face: entity.face,
 				size: entity.size,
 			};
 		},
 		
 		// callback for when it's colliding with another object TODO: this is stupid fix it
-    onCollide: function(obj){
-    	this.storeVelocity();
-    	this.velocity.x = obj.oldVelocity.x;
-    	this.velocity.y = obj.oldVelocity.y;
-    	this.velocity.z = obj.oldVelocity.z;
+    onCollide: function(obj){			
+    	if(this.interactive){
+				this.storeVelocity();
+				
+				//this.velocity.x = obj.oldVelocity.x;
+				//this.velocity.y = obj.oldVelocity.y;
+				//this.velocity.z = obj.oldVelocity.z;
+				
+				if(this.position.x - obj.position.x == 0) this.position.x -= 0.001;
+				if(this.position.z - obj.position.z == 0) this.position.z += 0.001;
+				
+				this.velocity.x -= (obj.position.x - this.position.x)/60;
+				this.velocity.z -= (obj.position.z - this.position.z)/60;
+			}
+			
+			this.checkTriggers("onCollide", obj);
     },
     
 		// TODO: this is stupid fix it
@@ -531,6 +563,8 @@ function createPhysicsEntity(position, rotation, size, id, material, geometry){
     	} else if(horizontal > horizontall || horizontal < -horizontall){
     		this.velocity.x = 0;
     	}
+			
+			this.checkTriggers("onMapCollide");
     },
 		
 		// returns position in the next frame using oldVelocity (for checking collisions)
@@ -577,7 +611,9 @@ function createPhysicsEntity(position, rotation, size, id, material, geometry){
     },
 		
 		respawn: function(){
-    	this.velocity.x = 0;
+    	this.checkTriggers("respawn");
+			
+			this.velocity.x = 0;
     	this.velocity.z = 0;
     	this.position.x = 0.1;
     	this.position.y = 50;
@@ -589,8 +625,9 @@ function createPhysicsEntity(position, rotation, size, id, material, geometry){
 }
 
 // Create an entity controlled by a socket
-function createSocketBoundEntity(position, rotation, size, id, material, geometry, socket){
+function createSocketBoundEntity(position, rotation, size, id, material, geometry, socket, interactive, face){
 	let n = {
+		type: 2,
 		socket: socket,
 		cameraRotation: rotation,
 		
@@ -601,7 +638,7 @@ function createSocketBoundEntity(position, rotation, size, id, material, geometr
 		},
 	};
 	
-	return extend(createPhysicsEntity(position, rotation, size, id, material, geometry), n);
+	return extend(createPhysicsEntity(position, rotation, size, id, material, geometry, interactive, face), n);
 }
 
 function createGameLoop(fps, callback){

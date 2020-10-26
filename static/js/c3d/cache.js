@@ -1,15 +1,15 @@
 // manages textures
 
-function createCache(loader){
+function createTextureCache(){
 	return {
 		path: "",
 		cache: [],
-		loader: loader,
+		loader: new TextureLoader(),
 		
 		// sets the current loading path
 		setPath: function(path){
 			if(path[path.length-1] !== "/"){
-				console.warn("The path you've set doesn't end in a forward slash!  Paths should use forward slashes, and end with them, or there may be caching issues.");
+				console.warn("C3D: The path you've set doesn't end in a forward slash!  Paths should use forward slashes, and end with them, or there may be caching issues.");
 			}
 			
 			this.path = path;
@@ -33,5 +33,13 @@ function createCache(loader){
 		load: function(name){
 			return this.cache[name];
 		}
+	};
+}
+
+function createModelCache(){
+	return {
+		path: "",
+		cache: [],
+		loader: new GLTFLoader(),
 	};
 }

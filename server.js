@@ -36,14 +36,15 @@ environment.pushMap(map);
 // the chat bot
 let theChatBot = {
 	username: "The Chat Bot",
-	color: "e31e31",
+	color: "fa5c00", //e31e31
 };
 chat.pushUser(theChatBot);
 
 // test entity
-let logan = c3ds.createPhysicsEntity({x: 1, y: 0.5, z: 2}, {x: 0, y: 0, z: 0}, {x: 0.3, y: 0.3, z: 0.3}, environment.generateID(), randomColor(), "box");
-//environment.pushServerEntity(logan);
- 
+let logan = c3ds.createPhysicsEntity({x: 3, y: 0.5, z: 2.5}, {x: 0, y: 0, z: 0}, {x: 0.3, y: 0.3, z: 0.3}, environment.generateID(), randomColor(), "cannon", "box", false, "null");
+environment.pushServerEntity(logan);
+
+
 // game loop (60fps)
 
 let gravity = -0.01;
@@ -270,7 +271,7 @@ function clientReady(socket){
 // when a client sends a username
 function clientUsername(username, socket, sockets){
 	let color = environment.getColor(socket);
-		
+	
 	chat.clientUsername(username, color, socket, sockets);
 }
 
@@ -298,7 +299,7 @@ function randomColor(mode){
 function randomSpokyColor(){
 	let colors = [{"r": 255, "g": 132, "b": 0}, {"r": 200, "g": 0, "b": 255}, {"r": 255, "g": 225, "b": 0}];
 	
-	let index = (sockets.length-1) % colors.length;
+	let index = Math.floor((Math.random()-0.00001) * colors.length);
 	let base = colors[index];
 	let offset = Math.floor(Math.random() * 20);
 	
@@ -315,11 +316,7 @@ function rgbToHex(color){
 	let g = zeroes(color.g.toString(16));
 	let b = zeroes(color.b.toString(16));
 	
-	console.log(r + ", " + g + ", " + b);
-	
 	let hex = r + g + b;
-	
-	console.log(hex);
 	
 	return parseInt(hex, 16);
 }
@@ -352,9 +349,30 @@ function pull(element){
 
 //inits a client entity
 function initClientEntity(socket){
-	let clientEntity = c3ds.createSocketBoundEntity(randomCoords(16, 0, 16), randomCoords(0, Math.PI*2, 0), {x: 1, y: 1, z: 1}, environment.generateID(), randomSpokyColor(), null, socket); //create a new entity for the client
+	let user = chat.getUserBySocket(socket);
+	
+	let face = "spoky";
+
+	if(user.username.toLowerCase() == "smugbox" || user.username.toLowerCase() == "ryan"){
+		face = "smugbox";
+	}
+	
+	let clientEntity = c3ds.createSocketBoundEntity(randomCoords(16, 0, 16), randomCoords(0, Math.PI*2, 0), {x: 1, y: 1, z: 1}, environment.generateID(), randomSpokyColor(), "null", null, socket, true, face); //create a new entity for the client
+	
+	clientEntity.createTrigger(null, "onCollide", (self, out, parameters) => {
+		if(out.id == logan.id){
+			self.speedcap = false;
+			self.force(-self.oldVelocity.x*70, 0.5, -self.oldVelocity.z*70);
+		}
+	});
+	
+	clientEntity.createTrigger(null, "respawn", (self, out, parameters) => {
+		self.speedcap = true;
+	});
 	
 	environment.pushServerEntity(clientEntity);
+	
+	user.color = chat.toHex(environment.getColor(socket));
 	
 	return clientEntity;
 }
@@ -362,7 +380,7 @@ function initClientEntity(socket){
 // combine array of strings by space
 function combine(parameters){
 	let message = "";
-				
+	
 	for(let i = 0; i < parameters.length; i++){
 		message += parameters[i] + " ";
 	}

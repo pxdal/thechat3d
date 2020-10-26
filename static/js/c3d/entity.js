@@ -28,12 +28,17 @@ function createEntity(id){
 				tOne: { type: "t", value: mat},
 				tSec: { type: "t", value: face}
 			};
-
-			let faceMaterial = new ShaderMaterial({
-				uniforms: uniforms,
-				vertexShader: vertShader,
-				fragmentShader: fragShader
-			});
+			
+			let faceMaterial;
+			if(face){
+				faceMaterial = new ShaderMaterial({
+					uniforms: uniforms,
+					vertexShader: vertShader,
+					fragmentShader: fragShader
+				});
+			} else {
+				faceMaterial = this.material;
+			}
 			
 			//let faceMaterial = this.material;
 			

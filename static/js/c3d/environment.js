@@ -50,6 +50,8 @@ function createEnvironment(socket){
     
     // Callback for when an entity bound to the client is sent
 		clientEntityIDResponse: function(id, camera){
+			console.log(id);
+			
 			this.clientEntity = clientEntity(createEntity(id), socket, camera);
 			
 			this.clientEntity.setCamera();
@@ -150,7 +152,7 @@ function createEnvironment(socket){
 			}	
 			
 			let ambience = new AmbientLight(0x404040);
-			let light = new DirectionalLight(0xffffff, 0.48);
+			let light = new DirectionalLight(0xffffff, 0.95);
 			light.position.x = -0.3;
 			
 			this.scene.add(ambience);

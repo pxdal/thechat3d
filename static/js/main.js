@@ -4,7 +4,7 @@
 const socket = io();
 
 // whether or not to display debug info
-let debug = true; //defaults to true
+let debug = false; //defaults to false
 
 // environment/camera/renderer
 let environment, chat, camera, listener, audioLoader, music, renderer, stats, clock, pog;
@@ -16,13 +16,14 @@ let near = 0.1;
 let far = 1000;
 
 // textures
-let textureLoader = new TextureLoader();
+//let textureLoader = new TextureLoader();
 let cubeMapLoader = new THREE.CubeTextureLoader();
 
-let textures = ["smiley.png", "stonks.png", "space.jpg", "ahh.png"];
+let textures = ["smiley.png", "stonks.png", "space.jpg", "ahh.png", "smugbox.png"];
 let halloweenTextures = ["stolen_skybox.png", "spoky.png"];
 
-let textureCache = createCache(textureLoader);
+let textureCache = createTextureCache();
+let modelCache = createModelCache();
 
 // load textures
 textureCache.setPath("static/media/textures/ordinary/");
@@ -87,9 +88,9 @@ function init(){
 		renderer.domElement.requestPointerLock();
 	});
 	
+	chat.setUsername();
+		
   socket.emit("clientReady");
-  
-  chat.setUsername();
 }
 
 // called every frame
@@ -191,7 +192,7 @@ function clientEntityIDResponse(id){
 socket.on("serverPromptError", serverPromptError);
 socket.on("serverEntityIDResponse", environment.serverEntityIDResponse.bind(environment)); //bind environment so "this" calls aren't screwed
 socket.on("serverEntityCacheResponse", (cache, id) => {
-	environment.serverEntityCacheResponse(cache, id, textureCache.load("spoky"));
+	environment.serverEntityCacheResponse(cache, id, cache.face == "null" ? false : textureCache.load(cache.face));
 });
 socket.on("serverEntityDynamicResponse", environment.serverEntityDynamicResponse.bind(environment));
 socket.on("serverEntityPull", environment.serverEntityPull.bind(environment));
