@@ -52,7 +52,7 @@ modelCache.setPath("static/media/models/ordinary/");
 modelCache.cache(models, modelLoad);
 
 function modelLoad(){
-	modelCache["cannon"].scale.set(0.1, 0.1, 0.1);
+	modelCache.load("cannon").scale.set(0.05, 0.05, 0.05);
 	
 	// main
 	init();
@@ -64,7 +64,7 @@ function init(){
   environment = createEnvironment(socket);
 	//set bg
 	environment.scene.background = pog;
-	
+
 	// chat
 	chat = createChat(socket);
 	chat.initInput();
@@ -97,7 +97,9 @@ function init(){
 	});
 	
 	chat.setUsername();
-		
+	
+	bindSocketEvents();
+	
   socket.emit("clientReady");
 }
 
@@ -197,17 +199,19 @@ function clientEntityIDResponse(id){
 // bind event listeners
 
 //socket
-socket.on("serverPromptError", serverPromptError);
-socket.on("serverEntityIDResponse", environment.serverEntityIDResponse.bind(environment)); //bind environment so "this" calls aren't screwed
-socket.on("serverEntityCacheResponse", (cache, id) => {
-	environment.serverEntityCacheResponse(cache, id, cache.face == "null" ? false : textureCache.load(cache.face), cache.model == "null" ? null : modelCache.load(cache.model));
-});
-socket.on("serverEntityDynamicResponse", environment.serverEntityDynamicResponse.bind(environment));
-socket.on("serverEntityPull", environment.serverEntityPull.bind(environment));
-socket.on("serverNewMessage", chat.serverNewMessage.bind(chat));
-socket.on("serverMapDataResponse", environment.serverMapDataResponse.bind(environment));
-socket.on("clientEntityIDResponse", clientEntityIDResponse);
-socket.on("clientInputRequest", environment.clientInputRequest.bind(environment));
+function bindSocketEvents(){
+	socket.on("serverPromptError", serverPromptError);
+	socket.on("serverEntityIDResponse", environment.serverEntityIDResponse.bind(environment)); //bind environment so "this" calls aren't screwed
+	socket.on("serverEntityCacheResponse", (cache, id) => {
+		environment.serverEntityCacheResponse(cache, id, cache.face == "null" ? false : textureCache.load(cache.face), cache.model == "null" ? null : modelCache.load(cache.model));
+	});
+	socket.on("serverEntityDynamicResponse", environment.serverEntityDynamicResponse.bind(environment));
+	socket.on("serverEntityPull", environment.serverEntityPull.bind(environment));
+	socket.on("serverNewMessage", chat.serverNewMessage.bind(chat));
+	socket.on("serverMapDataResponse", environment.serverMapDataResponse.bind(environment));
+	socket.on("clientEntityIDResponse", clientEntityIDResponse);
+	socket.on("clientInputRequest", environment.clientInputRequest.bind(environment));
+}
 
 //window
 window.addEventListener("unload", unload);

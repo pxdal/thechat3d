@@ -63,7 +63,7 @@ function createModelCache(){
 			this.loader.load( this.pathTo(files[index]), (object) => {
 				this.mcache[ files[index].replace(".", "").replace("obj", "") ] = object;
 				
-				if(index !== files.length){ 
+				if(index+1 !== files.length){ 
 					this.cacheModelLoop(files, index+1, callback);
 				} else {
 					callback();

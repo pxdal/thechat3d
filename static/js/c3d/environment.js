@@ -14,6 +14,7 @@ function initRenderer(){
 
 //creates the client-side portion of the server environment
 function createEnvironment(socket){
+	console.log("creating environment");
   return {
     scene: new Scene(), //creates the three.js scene where Object3Ds live
     entities: [], //array of client entities

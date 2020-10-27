@@ -41,7 +41,7 @@ let theChatBot = {
 chat.pushUser(theChatBot);
 
 // test entity
-let logan = c3ds.createPhysicsEntity({x: 3, y: 0.5, z: 2.5}, {x: 0, y: 0, z: 0}, {x: 0.3, y: 0.3, z: 0.3}, environment.generateID(), randomColor(), "cannon", false, "null");
+let logan = c3ds.createPhysicsEntity({x: 3, y: 0.5, z: 2.5}, {x: 3, y: 1, z: 2}, {x: 0.3, y: 0.3, z: 0.3}, environment.generateID(), randomColor(), "cannon", false, "null");
 environment.pushServerEntity(logan);
 
 
@@ -55,6 +55,9 @@ let gameLoop = c3ds.createGameLoop(65, () => {
 	
 	// input
 	environment.requestInputAll();
+	
+	// main
+	logan.rotation.x+= 0.01;
 	
 	// update entities
 	environment.update(yborder);
