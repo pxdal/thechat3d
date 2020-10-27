@@ -140,8 +140,8 @@ function createEnvironment(name){
 		requestInputAll: function(){
 			for(let i = 0; i < this.serverEntities.length; i++){
 				let entity = this.serverEntities[i];
-				
-				if(entity.socket){
+
+				if(entity.socket){		
 					entity.inputRequest();
 				}
 			}
@@ -443,7 +443,7 @@ function createServerEntity(position, rotation, size, id){
 }
 
 // Create an entity that has physics
-function createPhysicsEntity(position, rotation, size, id, material, model, geometry, interactive, face){
+function createPhysicsEntity(position, rotation, size, id, material, model, interactive, face){
 	let n = {
 		type: 1,
 		visible: true, //visiblity (defaults to true)
@@ -462,7 +462,6 @@ function createPhysicsEntity(position, rotation, size, id, material, model, geom
 		},
 		material: material,
 		model: model,
-		geometry: geometry,
 		
 		// sets visibility
 		setVisibility(visibility){
@@ -510,7 +509,7 @@ function createPhysicsEntity(position, rotation, size, id, material, model, geom
 			
 			return {
 				material: entity.material,
-				geometry: entity.geometry,
+				model: entity.model,
 				face: entity.face,
 				size: entity.size,
 			};
@@ -631,14 +630,15 @@ function createSocketBoundEntity(position, rotation, size, id, material, geometr
 		socket: socket,
 		cameraRotation: rotation,
 		
-		inputRequest: function(){
-			if(!this.enabled) return;
+		inputRequest: function(){	
+			if(!this.enabled || !this.interactive) return;
 			
 			this.socket.emit("clientInputRequest");
 		},
 	};
 	
 	return extend(createPhysicsEntity(position, rotation, size, id, material, geometry, interactive, face), n);
+																	//position, rotation, size, id, material, model, geometry, interactive, face
 }
 
 function createGameLoop(fps, callback){

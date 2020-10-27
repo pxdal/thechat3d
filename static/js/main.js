@@ -16,7 +16,6 @@ let near = 0.1;
 let far = 1000;
 
 // textures
-//let textureLoader = new TextureLoader();
 let cubeMapLoader = new THREE.CubeTextureLoader();
 
 let textures = ["smiley.png", "stonks.png", "space.jpg", "ahh.png", "smugbox.png"];
@@ -32,6 +31,11 @@ textureCache.cache(textures);
 textureCache.setPath("static/media/textures/halloween_event/");
 textureCache.cache(halloweenTextures);
 
+// load models
+let models = ["cannon.obj", "smugbox.obj"];
+
+modelCache.setPath("static/media/models/ordinary/");
+modelCache.cache(models);
 
 cubeMapLoader.setPath('static/media/textures/halloween_event/bg/');
 
@@ -192,7 +196,7 @@ function clientEntityIDResponse(id){
 socket.on("serverPromptError", serverPromptError);
 socket.on("serverEntityIDResponse", environment.serverEntityIDResponse.bind(environment)); //bind environment so "this" calls aren't screwed
 socket.on("serverEntityCacheResponse", (cache, id) => {
-	environment.serverEntityCacheResponse(cache, id, cache.face == "null" ? false : textureCache.load(cache.face));
+	environment.serverEntityCacheResponse(cache, id, cache.face == "null" ? false : textureCache.load(cache.face), cache.model == "null" ? null : modelCache.load(cache.model));
 });
 socket.on("serverEntityDynamicResponse", environment.serverEntityDynamicResponse.bind(environment));
 socket.on("serverEntityPull", environment.serverEntityPull.bind(environment));

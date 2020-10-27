@@ -10,11 +10,12 @@ function createEntity(id){
 		id: id,
 		material: null,
 		geometry: null,
+		model: null,
 		mesh: null,
 		scene: false,
 
 		//Takes in cache values
-		cache: function(material, geometry, size, face){
+		cache: function(material, model, size, face){
 			this.material = new MeshBasicMaterial({color: material});
 			
 			this.size = size;
@@ -52,7 +53,12 @@ function createEntity(id){
 			];
 			
 			this.geometry = new BoxGeometry(this.size.x, this.size.y, this.size.z);
-			this.mesh = new Mesh( this.geometry, materials);
+			
+			if(model == null){
+				this.mesh = new Mesh( this.geometry, materials);
+			} else {
+				this.mesh = model;
+			}
 		},
 		
 		//Takes in dynamic values

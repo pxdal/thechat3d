@@ -66,10 +66,12 @@ function createEnvironment(socket){
 		},
 		
     // Callback for the serverEntityCacheResponse event, stores the values 
-    serverEntityCacheResponse: function(cache, id, texture){
+    serverEntityCacheResponse: function(cache, id, texture, model){
       let entity = this.getEntityByID(id);
       
-      entity.cache(cache.material, cache.geometry, cache.size, texture);
+			console.log(cache.model);
+			
+      entity.cache(cache.material, model, cache.size, texture);
     },
     
     // Callback for the serverEntityDynamicResponse event, stores values

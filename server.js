@@ -41,7 +41,7 @@ let theChatBot = {
 chat.pushUser(theChatBot);
 
 // test entity
-let logan = c3ds.createPhysicsEntity({x: 3, y: 0.5, z: 2.5}, {x: 0, y: 0, z: 0}, {x: 0.3, y: 0.3, z: 0.3}, environment.generateID(), randomColor(), "cannon", "box", false, "null");
+let logan = c3ds.createPhysicsEntity({x: 3, y: 0.5, z: 2.5}, {x: 0, y: 0, z: 0}, {x: 0.3, y: 0.3, z: 0.3}, environment.generateID(), randomColor(), "cannon", false, "null");
 environment.pushServerEntity(logan);
 
 
@@ -357,16 +357,35 @@ function initClientEntity(socket){
 		face = "smugbox";
 	}
 	
-	let clientEntity = c3ds.createSocketBoundEntity(randomCoords(16, 0, 16), randomCoords(0, Math.PI*2, 0), {x: 1, y: 1, z: 1}, environment.generateID(), randomSpokyColor(), "null", null, socket, true, face); //create a new entity for the client
+	let clientEntity = c3ds.createSocketBoundEntity(randomCoords(16, 0, 16), randomCoords(0, Math.PI*2, 0), {x: 1, y: 1, z: 1}, environment.generateID(), randomSpokyColor(), "null", socket, true, face); //create a new entity for the client
+	
+	console.log(clientEntity.face);
 	
 	clientEntity.createTrigger(null, "onCollide", (self, out, parameters) => {
 		if(out.id == logan.id){
-			self.speedcap = false;
-			self.force(-self.oldVelocity.x*70, 0.5, -self.oldVelocity.z*70);
+			if(!self.interactive) return;
+			
+			self.interactive = false;
+			
+			self.velocity.x = 0;
+			self.velocity.y = 0;
+			self.velocity.z = 0;
+			
+			self.position.x = logan.position.x;
+			self.position.z = logan.position.z;
+			
+			self.rotation.x = 0;
+			self.rotation.y = 90*Math.PI/180;
+			
+			setTimeout((s) => {
+				s.speedcap = false;
+				s.force(10, 0.5, 0);
+			}, 1000, self);
 		}
 	});
 	
 	clientEntity.createTrigger(null, "respawn", (self, out, parameters) => {
+		self.interactive = true;
 		self.speedcap = true;
 	});
 	
