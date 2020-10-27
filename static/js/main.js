@@ -18,6 +18,20 @@ let far = 1000;
 // textures
 let cubeMapLoader = new THREE.CubeTextureLoader();
 
+cubeMapLoader.setPath('static/media/textures/halloween_event/bg/');
+
+pog = cubeMapLoader.load( [
+	'px.jpg',
+	'nx.jpg',
+	'py.jpg',
+	'ny.jpg',
+	'pz.jpg',
+	'nz.jpg'
+] );
+
+// input
+let inputListener = createInputListener();
+
 let textures = ["smiley.png", "stonks.png", "space.jpg", "ahh.png", "smugbox.png"];
 let halloweenTextures = ["stolen_skybox.png", "spoky.png"];
 
@@ -35,24 +49,14 @@ textureCache.cache(halloweenTextures);
 let models = ["cannon.obj", "smugbox.obj"];
 
 modelCache.setPath("static/media/models/ordinary/");
-modelCache.cache(models);
+modelCache.cache(models, modelLoad);
 
-cubeMapLoader.setPath('static/media/textures/halloween_event/bg/');
-
-pog = cubeMapLoader.load( [
-	'px.jpg',
-	'nx.jpg',
-	'py.jpg',
-	'ny.jpg',
-	'pz.jpg',
-	'nz.jpg'
-] );
-
-// input
-let inputListener = createInputListener();
-
-// main
-init();
+function modelLoad(){
+	modelCache["cannon"].scale.set(0.1, 0.1, 0.1);
+	
+	// main
+	init();
+}
 
 // methods
 function init(){

@@ -3,7 +3,7 @@
 function createTextureCache(){
 	return {
 		path: "",
-		cache: [],
+		tcache: [],
 		loader: new TextureLoader(),
 		
 		// sets the current loading path
@@ -25,13 +25,13 @@ function createTextureCache(){
 			for(let i = 0; i < files.length; i++){
 				let t = this.loader.load( this.pathTo(files[i]) );
 				
-				this.cache[ files[i].replace(".", "").replace("png", "").replace("jpg", "").replace("jpeg", "") ] = t;
+				this.tcache[ files[i].replace(".", "").replace("png", "").replace("jpg", "").replace("jpeg", "") ] = t;
 			}
 		},
 		
 		// load the texture for the filename (can also directly access with this.cache)
 		load: function(name){
-			return this.cache[name];
+			return this.tcache[name];
 		}
 	};
 }
@@ -39,7 +39,7 @@ function createTextureCache(){
 function createModelCache(){
 	return {
 		path: "",
-		cache: [],
+		mcache: [],
 		loader: new OBJLoader(),
 		
 		setPath: function(path){
@@ -55,16 +55,24 @@ function createModelCache(){
 		},
 		
 		
-		cache: function(files){
-			for(let i = 0; i < files.length; i++){
-				let t = this.loader.load( this.pathTo(files[i]), (object) => {
-					this.cache[ files[i].replace(".", "").replace("obj", "") ] = t;
-				});
-			}
+		cache: function(files, callback){
+			this.cacheModelLoop(files, 0, callback);
+		},
+		
+		cacheModelLoop: function(files, index, callback){
+			this.loader.load( this.pathTo(files[index]), (object) => {
+				this.mcache[ files[index].replace(".", "").replace("obj", "") ] = object;
+				
+				if(index !== files.length){ 
+					this.cacheModelLoop(files, index+1, callback);
+				} else {
+					callback();
+				}
+			});
 		},
 		
 		load: function(name){
-			return this.cache[name];
+			return this.mcache[name];
 		}
 	};
 }
