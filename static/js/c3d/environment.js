@@ -79,7 +79,7 @@ function createEnvironment(socket){
     serverEntityDynamicResponse: function(dynamic, id){
     	// bypass for the fact that this.clientEntity isn't a part of this.entities
     	if(id == this.clientEntity.id){
-				this.clientEntity.dynamic(dynamic.position, dynamic.rotation);
+				this.clientEntity.dynamic(dynamic.position, dynamic.rotation, dynamic.cameraRotation);
 				return;
     	}
     	

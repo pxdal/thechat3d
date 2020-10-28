@@ -74,10 +74,8 @@ function createEntity(id){
 				this.mesh.position.setX(position.x);
 				this.mesh.position.setY(position.y);
 				this.mesh.position.setZ(position.z);
-				
-				let rot = new Euler(0, this.rotation.y, 0);
-				
-				this.mesh.setRotationFromEuler(rot);
+
+				this.mesh.setRotationFromEuler(this.rotation);
 			}
 		},
 		
@@ -127,13 +125,39 @@ function clientEntity(entity, socket, camera){
 		material: undefined, //undefine these values because we won't need them (because we don't need to render self)
 		geometry: undefined,
 		
+		//Takes in dynamic values
+		dynamic: function(position, rotation, cameraRotation){
+			this.position = new Vector3(position.x, position.y, position.z);
+			this.rotation = new Euler(0, 0, 0, "YXZ");
+			
+			this.rotation.x = rotation.x;
+			this.rotation.y = rotation.y;
+			this.rotation.z = rotation.z;
+			
+			this.cameraRotation = new Euler(0, 0, 0, "YXZ");
+			
+			this.cameraRotation.x = cameraRotation.x;
+			this.cameraRotation.y = cameraRotation.y;
+			this.cameraRotation.z = cameraRotation.z;
+			
+			console.log(this.cameraRotation.x + ", " + this.rotation.x);
+			
+			if(this.mesh){
+				this.mesh.position.setX(position.x);
+				this.mesh.position.setY(position.y);
+				this.mesh.position.setZ(position.z);
+
+				this.mesh.setRotationFromEuler(this.rotation);
+			}
+		},
+		
 		setCamera: function(){
-			if(this.position && this.rotation && this.camera){
+			if(this.position && this.cameraRotation && this.camera){
 				this.camera.position.setX(this.position.x);
 				this.camera.position.setY(this.position.y);
 				this.camera.position.setZ(this.position.z);
 				
-				this.camera.setRotationFromEuler(this.rotation);
+				this.camera.setRotationFromEuler(this.cameraRotation);
 			}
 		},
 		

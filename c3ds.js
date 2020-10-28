@@ -41,21 +41,22 @@ function createEnvironment(name){
     	let sensitivity = 100;
 			
 			if(input[6]){
-				if(entity.rotation.x > Math.PI/2 || entity.rotation.x < -Math.PI/2){
-					entity.rotation.x = (entity.rotation.x/Math.abs(entity.rotation.x)) * Math.PI/2;
-				} else if(entity.rotation.x == Math.PI/2){
+				if(entity.cameraRotation.x > Math.PI/2 || entity.cameraRotation.x < -Math.PI/2){
+					entity.cameraRotation.x = (entity.cameraRotation.x/Math.abs(entity.cameraRotation.x)) * Math.PI/2;
+				} else if(entity.cameraRotation.x == Math.PI/2){
 					if(input[6].y/Math.abs(input[6].y) == 1){
-						entity.rotation.x -= input[6].y/sensitivity;
+						entity.cameraRotation.x -= input[6].y/sensitivity;
 					}
-				} else if(entity.rotation.x == -Math.PI/2){
+				} else if(entity.cameraRotation.x == -Math.PI/2){
 					if(input[6].y/Math.abs(input[6].y) == -1){
-						entity.rotation.x -= input[6].y/sensitivity;
+						entity.cameraRotation.x -= input[6].y/sensitivity;
 					}
 				} else {
-					entity.rotation.x -= input[6].y/sensitivity;
+					entity.cameraRotation.x -= input[6].y/sensitivity;
 				}
 				
 				entity.rotation.y -= input[6].x/100;
+				entity.cameraRotation.y = entity.rotation.y;
 			}
 			
 			// forward/backward
@@ -238,8 +239,15 @@ function createEnvironment(name){
 				
 				e.force(x, y, z);
 			}
-		}
+		},
 		
+		gravity: function(x, y, z){
+			for(let i = 0; i < this.serverEntities.length; i++){
+				let entity = this.serverEntities[i];
+				
+				if(entity.gravity) entity.force(x, y, z);
+			}
+		}
   };
 }
 
@@ -382,7 +390,7 @@ function createChat(){
 			}
 			
 			return zeroes + str;
-		},
+		}
 	};
 }
 
@@ -448,6 +456,7 @@ function createPhysicsEntity(position, rotation, size, id, material, model, inte
 		type: 1,
 		visible: true, //visiblity (defaults to true)
 		interactive: interactive,
+		gravity: true,
 		speedcap: true, //whether or not to apply a cap to it's velocity (looking to change this to a value in the future)
 		face: face,
 		velocity: { //velocity defaults to 0
@@ -480,7 +489,7 @@ function createPhysicsEntity(position, rotation, size, id, material, model, inte
     // apply a vector of force to this entity
     force: function(x, y, z){
 			this.checkTriggers("force");
-			
+	
     	this.storeVelocity();
     	
     	this.velocity.x += x;
@@ -628,7 +637,23 @@ function createSocketBoundEntity(position, rotation, size, id, material, geometr
 	let n = {
 		type: 2,
 		socket: socket,
-		cameraRotation: rotation,
+		cameraRotation: {
+			x: rotation.x,
+			y: rotation.y,
+			z: rotation.z
+		},
+		
+		//Returns entity values that the server expects to change often (dynamic values)
+    dynamic: function(){
+      let entity = this;
+      
+      //note that the vectors are turned into x, y, z values because it's not as big, so the server can send them faster
+      return {
+      	position: entity.position,
+      	rotation: entity.rotation,
+				cameraRotation: entity.cameraRotation,
+      };
+    },
 		
 		inputRequest: function(){	
 			if(!this.enabled || !this.interactive) return;
@@ -638,7 +663,6 @@ function createSocketBoundEntity(position, rotation, size, id, material, geometr
 	};
 	
 	return extend(createPhysicsEntity(position, rotation, size, id, material, geometry, interactive, face), n);
-																	//position, rotation, size, id, material, model, geometry, interactive, face
 }
 
 function createGameLoop(fps, callback){

@@ -41,7 +41,8 @@ let theChatBot = {
 chat.pushUser(theChatBot);
 
 // test entity
-let logan = c3ds.createPhysicsEntity({x: 3, y: 0.5, z: 2.5}, {x: 3, y: 1, z: 2}, {x: 0.3, y: 0.3, z: 0.3}, environment.generateID(), randomColor(), "cannon", false, "null");
+let logan = c3ds.createPhysicsEntity({x: -1.0, y: 0.1, z: 7.0}, {x: -90*Math.PI/180, y: 270*Math.PI/180, z: -90*Math.PI/180}, {x: 1.0, y: 1.5, z: 1.5}, environment.generateID(), randomColor(), "cannon", false, "null");
+logan.gravity = false;
 environment.pushServerEntity(logan);
 
 
@@ -51,13 +52,10 @@ let gravity = -0.01;
 
 let gameLoop = c3ds.createGameLoop(65, () => {	
 	// gravity
-	environment.forceAll(0, gravity, 0);
+	environment.gravity(0, gravity, 0);
 	
 	// input
 	environment.requestInputAll();
-	
-	// main
-	logan.rotation.x+= 0.01;
 	
 	// update entities
 	environment.update(yborder);
@@ -114,7 +112,7 @@ let commandLoop = c3ds.createGameLoop(2, () => {
 				
 				console.log("closing server");
 				io.close();
-								
+				
 				break;
 			case "bindUsername": //bind socket to client by username for other commands which require it
 				console.log("binding username");
@@ -378,11 +376,11 @@ function initClientEntity(socket){
 			self.position.z = logan.position.z;
 			
 			self.rotation.x = 0;
-			self.rotation.y = 90*Math.PI/180;
+			self.rotation.y = 0;
 			
 			setTimeout((s) => {
 				s.speedcap = false;
-				s.force(10, 0.5, 0);
+				s.force(0, 2, 2);
 			}, 1000, self);
 		}
 	});
