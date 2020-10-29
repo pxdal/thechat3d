@@ -40,25 +40,85 @@ let theChatBot = {
 };
 chat.pushUser(theChatBot);
 
-// test entity
-let logan = c3ds.createPhysicsEntity({x: -1.0, y: 0.1, z: 7.0}, {x: -90*Math.PI/180, y: 270*Math.PI/180, z: -90*Math.PI/180}, {x: 1.0, y: 1.5, z: 1.5}, environment.generateID(), randomColor(), "cannon", false, "null");
-logan.gravity = false;
+// test entities
+let logan = c3ds.createPhysicsEntity({x: -1.0, y: 0.1, z: 7.0}, {x: -90*Math.PI/180, y: 270*Math.PI/180, z: -90*Math.PI/180}, {x: 1.0, y: 1.0, z: 1.5}, environment.generateID(), randomColor(), "cannon", false, "null");
+logan.gravity = 0;
+
 environment.pushServerEntity(logan);
 
+let ghostUser = {
+	username: "Ghost",
+	color: "e6d1be",
+}
+chat.pushUser(ghostUser);
 
-// game loop (60fps)
+let ghosts = [];
+
+let g = createGhost(randomCoords(16, 0, 16), randomCoords(0, Math.PI*2, 0));
+	
+ghosts.push(g);
+environment.pushServerEntity(g);
+
+// game loop (65fps)
 
 let gravity = -0.01;
 
+let f = 0;
+
+let mRate = 2275;
+let eRate = 650;
+let ghostTimer = 0;
+let ghostActive = null;
+
 let gameLoop = c3ds.createGameLoop(65, () => {	
 	// gravity
-	environment.gravity(0, gravity, 0);
+	environment.gravity();
 	
 	// input
 	environment.requestInputAll();
 	
+	// boo!
+	if(f % mRate == 0){
+		chat.createMessage(ghostUser.username, ghostUser.color, "Boo!", sockets);
+	}
+
+	if(f % eRate == 0){
+		ghostTimer = 650;
+		ghostActive = Math.floor(Math.random() * (ghosts.length-0.001));
+	}
+	
+	if(ghostTimer > 0 && ghosts[ghostActive]){
+		let g = ghosts[ghostActive];
+		let target;
+		if(environment.getEntityBySocket(sockets[ghostActive])){ 
+			target = environment.getEntityBySocket(sockets[ghostActive]);
+
+			g.lookAt(target);
+			
+			if(g.position.x < 9.4 && g.position.x > -9.4){
+				g.force(-0.01 * Math.sin(g.rotation.y), 0, 0);
+			}
+			if(g.position.z < 9.4 && g.position.z > -9.4){
+				g.force(0, 0, -0.01 * Math.cos(g.rotation.y));
+			}
+			
+			if(g.position.x > 9.4 || g.position.x < -9.4){
+				g.position.x = Math.sign(g.position.x) * 9.35;
+			}
+			
+			if(g.position.z > 9.4 || g.position.z < -9.4){
+				g.position.z = Math.sign(g.position.z) * 9.35;
+			}
+		}
+		
+		ghostTimer--;
+	}
+	
 	// update entities
 	environment.update(yborder);
+	
+	//increase frame
+	f++;
 });
 
 
@@ -228,6 +288,9 @@ function disconnect(reason, socket){
 	
 	environment.pullServerEntity(client); //if the client intentionally disconnected, pull entity
 	
+	let g = ghosts.shift();
+	environment.pullServerEntity(g);
+	
 	sockets.pull(socket);
 	
 	let user = chat.getUserBySocket(socket);
@@ -235,14 +298,6 @@ function disconnect(reason, socket){
 	if(user !== null){
 		chat.createMessage(theChatBot.username, theChatBot.color, "User [" + user.username + "] has foolishly left The Chat 3D.", sockets);
 		console.log("User [" + user.username + "] has left.");
-	}
-	
-	if(client !== null){
-		for(let i = 0; i < sockets.length; i++){
-			let s = sockets[i];
-			
-			s.emit("serverEntityPull", client.id);
-		}
 	}
 }
 
@@ -253,18 +308,17 @@ function clientReady(socket){
 	
 	// Send the client an entity to bind to
 	let clientEntity = initClientEntity(socket);
-
+	
 	socket.emit("clientEntityIDResponse", clientEntity.id);
 	
-	// Send the new client entity to the other sockets
-	for(let i = 0; i < sockets.length; i++){
-		let s = sockets[i];
-		
-		if(s !== socket){
-			environment.sendServerEntityID(s, clientEntity);
-		}
-	}
+	environment.pushServerEntity(clientEntity);
 	
+	chat.getUserBySocket(socket).color = chat.toHex(environment.getColor(socket));
+	
+	let g = createGhost(randomCoords(16, 0, 16), randomCoords(0, Math.PI*2, 0));
+	ghosts.push(g);
+	environment.pushServerEntity(g);
+		
 	// Send map data
 	environment.map.sendData(socket);
 }
@@ -353,48 +407,82 @@ function initClientEntity(socket){
 	let user = chat.getUserBySocket(socket);
 	
 	let face = "spoky";
-
+	let model = "null";
+	
 	if(user.username.toLowerCase() == "smugbox" || user.username.toLowerCase() == "ryan"){
 		face = "smugbox";
+		//model = "smugbox";
 	}
 	
-	let clientEntity = c3ds.createSocketBoundEntity(randomCoords(16, 0, 16), randomCoords(0, Math.PI*2, 0), {x: 1, y: 1, z: 1}, environment.generateID(), randomSpokyColor(), "null", socket, true, face); //create a new entity for the client
+	let clientEntity = c3ds.createSocketBoundEntity(randomCoords(16, 0, 16), randomCoords(0, Math.PI*2, 0), {x: 1, y: 1, z: 1}, environment.generateID(), randomSpokyColor(), model, socket, true, face); //create a new entity for the client
 	
-	console.log(clientEntity.face);
+	while(clientEntity.checkMapCollisions(environment.map.objects)){
+		clientEntity.position = randomCoords(16, 0, 16);
+	}
 	
 	clientEntity.createTrigger(null, "onCollide", (self, out, parameters) => {
 		if(out.id == logan.id){
 			if(!self.interactive) return;
 			
 			self.interactive = false;
+			self.gravity = 0;
 			
 			self.velocity.x = 0;
 			self.velocity.y = 0;
 			self.velocity.z = 0;
 			
 			self.position.x = logan.position.x;
+			self.position.y = 1;
 			self.position.z = logan.position.z;
 			
 			self.rotation.x = 0;
-			self.rotation.y = 0;
+			self.rotation.y = 180*Math.PI/180;
+			self.rotation.z = 0;
+			
+			self.cameraRotation.x = self.rotation.x ;
+			self.cameraRotation.y = self.rotation.y;
+			self.cameraRotation.z = self.rotation.z;
 			
 			setTimeout((s) => {
+				s.gravity = -0.01;
+				s.interactive = true;
 				s.speedcap = false;
 				s.force(0, 2, 2);
 			}, 1000, self);
 		}
+		
+		for(let i = 0; i < ghosts.length; i++){
+			let g = ghosts[i];
+			
+			if(out.id == g.id){
+				self.force(out.velocity.x*1.35, 0, out.velocity.z*1.35);
+			}
+		}
+	});
+	
+	clientEntity.createTrigger(null, "onMapCollide", (self, out, parameters) => {
+		self.speedcap = true;
+		self.interactive = true;
 	});
 	
 	clientEntity.createTrigger(null, "respawn", (self, out, parameters) => {
 		self.interactive = true;
 		self.speedcap = true;
+		self.velocity.y = -1;
 	});
 	
-	environment.pushServerEntity(clientEntity);
-	
-	user.color = chat.toHex(environment.getColor(socket));
-	
 	return clientEntity;
+}
+
+function createGhost(position, rotation){
+	let ghost = c3ds.createPhysicsEntity(position, rotation, {x: 1, y: 1, z: 1}, environment.generateID(), 0xe6d1be, "null", true, "boo");
+	ghost.gravity = -0.0005;
+	
+	while(ghost.checkMapCollisions(environment.map.objects)){
+		ghost.position = randomCoords(16, 0, 16);
+	}
+	
+	return ghost;
 }
 
 // combine array of strings by space

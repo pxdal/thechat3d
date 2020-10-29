@@ -51,8 +51,6 @@ function createEnvironment(socket){
     
     // Callback for when an entity bound to the client is sent
 		clientEntityIDResponse: function(id, camera){
-			console.log(id);
-			
 			this.clientEntity = clientEntity(createEntity(id), socket, camera);
 			
 			this.clientEntity.setCamera();
@@ -70,8 +68,6 @@ function createEnvironment(socket){
     serverEntityCacheResponse: function(cache, id, texture, model){
       let entity = this.getEntityByID(id);
       
-			console.log(cache.model);
-			
       entity.cache(cache.material, model, cache.size, texture);
     },
     
@@ -155,7 +151,8 @@ function createEnvironment(socket){
 			}	
 			
 			let ambience = new AmbientLight(0x404040);
-			let light = new DirectionalLight(0xffffff, 0.95);
+			let light = new DirectionalLight(0x753b00, 0.6);
+						
 			light.position.x = -0.3;
 			
 			this.scene.add(ambience);
@@ -211,9 +208,12 @@ function createEnvironment(socket){
     pushEntityToScene: function(id){
     	let entity = this.getEntityByID(id);
     	let mesh = entity.mesh;
-    	
+    	let hitbox = entity.hitbox;			
+			
     	if(entity.ready()){
 				this.scene.add( mesh );
+				
+				if(debug) this.scene.add( hitbox );
 			} else { console.warn("attempted to push mesh to scene but the mesh isn't complete"); }
     },
     
@@ -221,9 +221,11 @@ function createEnvironment(socket){
     pullEntityFromScene: function(id){
     	let entity = this.getEntityByID(id);
     	let mesh = entity.mesh;
-    	
+    	let hitbox = entity.hitbox;
+			
     	this.scene.remove( mesh );
-    	
+    	if(debug) this.scene.remove( hitbox );
+			
     	entity.dispose(); //dispose of materials and geometries
     },
     

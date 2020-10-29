@@ -41,6 +41,7 @@ function createModelCache(){
 		path: "",
 		mcache: [],
 		loader: new OBJLoader(),
+		mtlLoader: new MTLLoader(),
 		
 		setPath: function(path){
 			if(path[path.length-1] !== "/"){
@@ -54,13 +55,18 @@ function createModelCache(){
 			return this.path + file;
 		},
 		
+		pathToMaterial: function(file){
+			return this.path.replace("models", "textures") + file.replace(".obj", "") + "/";
+		},
 		
 		cache: function(files, callback){
 			this.cacheModelLoop(files, 0, callback);
 		},
 		
 		cacheModelLoop: function(files, index, callback){
-			this.loader.load( this.pathTo(files[index]), (object) => {
+			this.loader.setPath(this.path);
+				
+			this.loader.load( files[index], (object) => {
 				this.mcache[ files[index].replace(".", "").replace("obj", "") ] = object;
 				
 				if(index+1 !== files.length){ 
@@ -69,6 +75,39 @@ function createModelCache(){
 					callback();
 				}
 			});
+				
+			/*this.mtlLoader.load( "obj.mtl" , (materials) => {
+				materials.preload();
+				
+				let loader = new OBJLoader();
+				
+				loader.setMaterials(materials);
+				
+				loader.setPath(this.path);
+				loader.load(files[index], (object) => {
+					this.mcache[ files[index].replace(".", "").replace("obj", "") ] = object;
+					
+					if(index+1 !== files.length){ 
+						this.cacheModelLoop(files, index+1, callback);
+					} else {
+						callback();
+					}
+				});
+				
+				this.loader.setMaterials(materials);
+				
+				this.loader.setPath(this.path);
+				
+				this.loader.load( files[index], (object) => {
+					this.mcache[ files[index].replace(".", "").replace("obj", "") ] = object;
+					
+					if(index+1 !== files.length){ 
+						this.cacheModelLoop(files, index+1, callback);
+					} else {
+						callback();
+					}
+				});
+			}, () => {}, (error) => {console.log(error);});*/
 		},
 		
 		load: function(name){

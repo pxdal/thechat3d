@@ -33,7 +33,7 @@ pog = cubeMapLoader.load( [
 let inputListener = createInputListener();
 
 let textures = ["smiley.png", "stonks.png", "space.jpg", "ahh.png", "smugbox.png"];
-let halloweenTextures = ["stolen_skybox.png", "spoky.png"];
+let halloweenTextures = ["stolen_skybox.png", "spoky.png", "boo.png"];
 
 let textureCache = createTextureCache();
 let modelCache = createModelCache();
@@ -46,13 +46,26 @@ textureCache.setPath("static/media/textures/halloween_event/");
 textureCache.cache(halloweenTextures);
 
 // load models
-let models = ["cannon.obj", "smugbox.obj"];
+let models = ["cannon.obj", "smugbox.obj", "spoon.obj"];
 
 modelCache.setPath("static/media/models/ordinary/");
 modelCache.cache(models, modelLoad);
 
 function modelLoad(){
-	modelCache.load("cannon").scale.set(0.05, 0.05, 0.05);
+  modelCache.load("cannon").scale.set(0.05, 0.05, 0.05);
+	modelCache.load("smugbox").scale.set(0.04, 0.04, 0.04);
+	
+	modelCache.load("cannon").modelPosition = {
+		x: 0.45,
+		y: 0,
+		z: 0.3
+	};
+	
+	modelCache.load("smugbox").modelRotation = {
+		x: -1.5708,
+		y: 0,
+		z: 0,
+	};
 	
 	// main
 	init();
@@ -118,7 +131,7 @@ function animate(){
   // if there is an input change request it
   if( inputListener.keyPressed() ){
 		if(!music.source){
-			audioLoader.load( "static/media/sounds/c3d-whitenoise.ogg", function(buffer){
+			audioLoader.load( "static/media/sounds/c3d-funnyskeletonsong.ogg", function(buffer){
 				music.setBuffer(buffer);
 				music.setLoop(true);
 				music.setVolume( 0.1 );

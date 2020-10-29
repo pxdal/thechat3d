@@ -6,6 +6,8 @@ function createEntity(id){
 	return {
 		position: null,
 		rotation: null,
+		modelPosition: {x: 0, y: 0, z: 0},
+		modelRotation: {x: 0, y: 0, z: 0},
 		size: null,
 		id: id,
 		material: null,
@@ -13,7 +15,8 @@ function createEntity(id){
 		model: null,
 		mesh: null,
 		scene: false,
-
+		hitbox: null,
+		
 		//Takes in cache values
 		cache: function(material, model, size, face){
 			this.material = new MeshBasicMaterial({color: material});
@@ -31,6 +34,7 @@ function createEntity(id){
 			};
 			
 			let faceMaterial;
+			
 			if(face){
 				faceMaterial = new ShaderMaterial({
 					uniforms: uniforms,
@@ -55,8 +59,24 @@ function createEntity(id){
 			this.geometry = new BoxGeometry(this.size.x, this.size.y, this.size.z);
 			
 			if(model == null){
-				this.mesh = new Mesh( this.geometry, materials);
+				this.mesh = new Mesh( this.geometry, materials );
+				this.hitbox = this.mesh.clone();
 			} else {
+				let mat = new MeshBasicMaterial({color: material, transparent: true, opacity: 0.5});
+				this.hitbox = new Mesh( this.geometry, mat);
+				
+				if(model.modelPosition){
+					this.modelPosition.x = model.modelPosition.x;
+					this.modelPosition.y = model.modelPosition.y;
+					this.modelPosition.z = model.modelPosition.z;
+				}
+				
+				if(model.modelRotation){ 
+					this.modelRotation.x = model.modelRotation.x;
+					this.modelRotation.y = model.modelRotation.y;
+					this.modelRotation.z = model.modelRotation.z;
+				}
+				
 				this.mesh = model;
 			}
 		},
@@ -66,16 +86,21 @@ function createEntity(id){
 			this.position = new Vector3(position.x, position.y, position.z);
 			this.rotation = new Euler(0, 0, 0, "YXZ");
 			
-			this.rotation.x = rotation.x;
-			this.rotation.y = rotation.y;
-			this.rotation.z = rotation.z;
+			this.rotation.x = rotation.x+this.modelRotation.x;
+			this.rotation.y = rotation.y+this.modelRotation.y;
+			this.rotation.z = rotation.z+this.modelRotation.z;
 			
 			if(this.mesh){
-				this.mesh.position.setX(position.x);
-				this.mesh.position.setY(position.y);
-				this.mesh.position.setZ(position.z);
-
+				this.mesh.position.setX(position.x+this.modelPosition.x);
+				this.mesh.position.setY(position.y+this.modelPosition.y);
+				this.mesh.position.setZ(position.z+this.modelPosition.z);
+				
+				this.hitbox.position.setX(position.x);
+				this.hitbox.position.setY(position.y);
+				this.hitbox.position.setZ(position.z);
+				
 				this.mesh.setRotationFromEuler(this.rotation);
+				this.hitbox.setRotationFromEuler(this.rotation);
 			}
 		},
 		
@@ -139,9 +164,7 @@ function clientEntity(entity, socket, camera){
 			this.cameraRotation.x = cameraRotation.x;
 			this.cameraRotation.y = cameraRotation.y;
 			this.cameraRotation.z = cameraRotation.z;
-			
-			console.log(this.cameraRotation.x + ", " + this.rotation.x);
-			
+
 			if(this.mesh){
 				this.mesh.position.setX(position.x);
 				this.mesh.position.setY(position.y);

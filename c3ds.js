@@ -178,20 +178,30 @@ function createEnvironment(name){
     
     //pushes server entity to serverEntities, also checks if the id is taken
     pushServerEntity: function(entity){
-      if( this.checkID( entity.id ) ){
-        this.serverEntities.push(entity);
-        return "pushed entity with id: " + entity.id;
-      } else {
-        return "id taken";
-      }
+			for(let i = 0; i < this.serverEntities.length; i++){
+				if(this.serverEntities[i].type !== 2) continue;
+				
+				let s = this.serverEntities[i].socket;
+
+				this.sendServerEntityID(s, entity);
+			}
+			
+			this.serverEntities.push(entity);
     },
     
     //pulls server entity from serverEntities
     pullServerEntity: function(entity){
     	if(entity == null) return;
-    	
+			
+			for(let i = 0; i < this.serverEntities.length; i++){
+				if(this.serverEntities[i].type !== 2) continue;
+				
+				let s = this.serverEntities[i].socket;
+				
+				s.emit("serverEntityPull", entity.id);
+			}
+	
       this.serverEntities.splice( this.serverEntities.indexOf(entity), 1 );
-      return "pulled entity with id: " + entity.id;
     },
     
     // push a map
@@ -228,7 +238,7 @@ function createEnvironment(name){
 			let entity = this.getEntityBySocket(socket);
 			
 			if(entity == null) return 0;
-			
+
 			return entity.material;
 		},
 		
@@ -241,11 +251,13 @@ function createEnvironment(name){
 			}
 		},
 		
-		gravity: function(x, y, z){
+		gravity: function(){
 			for(let i = 0; i < this.serverEntities.length; i++){
 				let entity = this.serverEntities[i];
 				
-				if(entity.gravity) entity.force(x, y, z);
+				if(entity.type >= 1){
+					entity.force(0, entity.gravity, 0);
+				}
 			}
 		}
   };
@@ -456,7 +468,7 @@ function createPhysicsEntity(position, rotation, size, id, material, model, inte
 		type: 1,
 		visible: true, //visiblity (defaults to true)
 		interactive: interactive,
-		gravity: true,
+		gravity: -0.01,
 		speedcap: true, //whether or not to apply a cap to it's velocity (looking to change this to a value in the future)
 		face: face,
 		velocity: { //velocity defaults to 0
@@ -605,6 +617,8 @@ function createPhysicsEntity(position, rotation, size, id, material, model, inte
     checkMapCollisions: function(objects){
 			if(!this.enabled) return;
 			
+			let colliding = false;
+			
     	this.onGround = false;
     
     	for(let i = 0; i < objects.length; i++){
@@ -613,9 +627,12 @@ function createPhysicsEntity(position, rotation, size, id, material, model, inte
     		if(obj.id == this.id) continue;
     		
     		if( rrCol(this.nextFrame(), obj) ){
-    			this.onMapCollide(obj);
+    			colliding = true;
+					this.onMapCollide(obj);
     		}
     	}
+			
+			return colliding;
     },
 		
 		respawn: function(){
@@ -626,7 +643,13 @@ function createPhysicsEntity(position, rotation, size, id, material, model, inte
     	this.position.x = 0.1;
     	this.position.y = 50;
     	this.position.z = -0.1;
-    }
+    },
+		lookAt: function(entity){
+			let dx = this.position.x - entity.position.x;
+			let dz = this.position.z - entity.position.z;
+			
+			this.rotation.y = Math.atan2(dx, dz);
+		},
 	};
 	
 	return extend(createServerEntity(position, rotation, size, id), n);
