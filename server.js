@@ -16,7 +16,7 @@ const io = socket(server);
 let sockets = []; //stores sockets
 sockets.pull = pull; //TODO this is stupid
 
-let port = 80; //set to 80 for public
+let port = 8080; //set to 80 for public
 
 // main
 
@@ -65,7 +65,7 @@ let gravity = -0.01;
 
 let f = 0;
 
-let mRate = 2275;
+let mRate = 7800; //2 min
 let eRate = 650;
 let ghostTimer = 0;
 let ghostActive = null;
@@ -90,25 +90,25 @@ let gameLoop = c3ds.createGameLoop(65, () => {
 	if(ghostTimer > 0 && ghosts[ghostActive]){
 		let g = ghosts[ghostActive];
 		let target;
-		if(environment.getEntityBySocket(sockets[ghostActive])){ 
+		if(environment.getEntityBySocket(sockets[ghostActive]) && !g.launching){ 
 			target = environment.getEntityBySocket(sockets[ghostActive]);
 
 			g.lookAt(target);
 			
-			if(g.position.x < 9.4 && g.position.x > -9.4){
+			if(true/*g.position.x < 9.4 && g.position.x > -9.4*/){
 				g.force(-0.01 * Math.sin(g.rotation.y), 0, 0);
 			}
-			if(g.position.z < 9.4 && g.position.z > -9.4){
+			if(true/*g.position.z < 9.4 && g.position.z > -9.4*/){
 				g.force(0, 0, -0.01 * Math.cos(g.rotation.y));
 			}
 			
-			if(g.position.x > 9.4 || g.position.x < -9.4){
+			/*if(g.position.x > 9.4 || g.position.x < -9.4){
 				g.position.x = Math.sign(g.position.x) * 9.35;
 			}
 			
 			if(g.position.z > 9.4 || g.position.z < -9.4){
 				g.position.z = Math.sign(g.position.z) * 9.35;
-			}
+			}*/
 		}
 		
 		ghostTimer--;
@@ -425,6 +425,7 @@ function initClientEntity(socket){
 			if(!self.interactive) return;
 			
 			self.interactive = false;
+			self.locked = true;
 			self.gravity = 0;
 			
 			self.velocity.x = 0;
@@ -446,6 +447,7 @@ function initClientEntity(socket){
 			setTimeout((s) => {
 				s.gravity = -0.01;
 				s.interactive = true;
+				s.locked = false;
 				s.speedcap = false;
 				s.force(0, 2, 2);
 			}, 1000, self);
@@ -477,10 +479,59 @@ function initClientEntity(socket){
 function createGhost(position, rotation){
 	let ghost = c3ds.createPhysicsEntity(position, rotation, {x: 1, y: 1, z: 1}, environment.generateID(), 0xe6d1be, "null", true, "boo");
 	ghost.gravity = -0.0005;
+	ghost.launching = false;
 	
 	while(ghost.checkMapCollisions(environment.map.objects)){
 		ghost.position = randomCoords(16, 0, 16);
 	}
+	
+	ghost.createTrigger(null, "onCollide", (self, out, parameters) => {
+		if(out.id == logan.id){
+			if(self.locked) return;
+			
+			self.locked = true;
+			self.interactive = false;
+			self.launching = true;
+			self.gravity = 0;
+			
+			
+			self.velocity.x = 0;
+			self.velocity.y = 0;
+			self.velocity.z = 0;
+			
+			self.position.x = logan.position.x;
+			self.position.y = 1;
+			self.position.z = logan.position.z;
+			
+			self.rotation.x = 0;
+			self.rotation.y = 180*Math.PI/180;
+			self.rotation.z = 0;
+			
+			setTimeout((s) => {
+				s.gravity = -0.01;
+				s.locked = false;
+				s.speedcap = false;
+				s.force(0, 2, 2);
+			}, 1000, self);
+		}
+	});
+	
+	ghost.createTrigger(null, "onMapCollide", (self, out, parameters) => {
+		self.speedcap = true;
+		self.interactive = true;
+		self.locked = false;
+		self.launching = false;
+		self.gravity = -0.0005;
+	});
+	
+	ghost.createTrigger(null, "respawn", (self, out, parameters) => {
+		self.interactive = true;
+		self.locked = false;
+		self.launcing = false;
+		self.speedcap = true;
+		self.velocity.y = -1;
+		self.gravity = -0.0005;
+	});
 	
 	return ghost;
 }

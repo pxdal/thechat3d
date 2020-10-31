@@ -1,5 +1,5 @@
 {
-	"name": "Test Map",
+	"name": "Halloween Map",
 	"objects": [{
 		"position": {
 			"x": 0,
@@ -116,13 +116,13 @@
 		"position": {
 			"x": 0.0,
 			"y": 150.0,
-			"z": 600.0
+			"z": 592.5
 		},
 		"rotation": {},
 		"size": {
 			"x": 50,
 			"y": 5,
-			"z": 30
+			"z": 15
 		},
 		"color": "0x6b099e",
 		"texture": ""
@@ -187,6 +187,90 @@
 			"x": -11,
 			"y": 155.8,
 			"z": 596.3
+		},
+		"rotation": {},
+		"size": {
+			"x": 3,
+			"y": 1,
+			"z": 3
+		},
+		"color": "0xe37d17",
+		"texture": ""
+	}, {
+		"position": {
+			"x": -8.5,
+			"y": 156.8,
+			"z": 592.5
+		},
+		"rotation": {},
+		"size": {
+			"x": 2,
+			"y": 0.1,
+			"z": 2
+		},
+		"color": "0xe37d17",
+		"texture": ""
+	}, {
+		"position": {
+			"x": -5.5,
+			"y": 157.5,
+			"z": 592.25
+		},
+		"rotation": {},
+		"size": {
+			"x": 2,
+			"y": 0.1,
+			"z": 2
+		},
+		"color": "0xe37d17",
+		"texture": ""
+	}, {
+		"position": {
+			"x": -2.25,
+			"y": 157.8,
+			"z": 596.3
+		},
+		"rotation": {},
+		"size": {
+			"x": 3,
+			"y": 1,
+			"z": 3
+		},
+		"color": "0xe37d17",
+		"texture": ""
+	}, {
+		"position": {
+			"x": 3.95,
+			"y": 157.8,
+			"z": 596.3
+		},
+		"rotation": {},
+		"size": {
+			"x": 3,
+			"y": 1,
+			"z": 3
+		},
+		"color": "0xe37d17",
+		"texture": ""
+	}, {
+		"position": {
+			"x": 9,
+			"y": 158.5,
+			"z": 596.3
+		},
+		"rotation": {},
+		"size": {
+			"x": 3,
+			"y": 1,
+			"z": 3
+		},
+		"color": "0xe37d17",
+		"texture": ""
+	}, {
+		"position": {
+			"x": 14.5,
+			"y": 158.5,
+			"z": 593.5
 		},
 		"rotation": {},
 		"size": {

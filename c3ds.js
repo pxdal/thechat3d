@@ -469,6 +469,7 @@ function createPhysicsEntity(position, rotation, size, id, material, model, inte
 		visible: true, //visiblity (defaults to true)
 		interactive: interactive,
 		gravity: -0.01,
+		locked: false,
 		speedcap: true, //whether or not to apply a cap to it's velocity (looking to change this to a value in the future)
 		face: face,
 		velocity: { //velocity defaults to 0
@@ -501,7 +502,9 @@ function createPhysicsEntity(position, rotation, size, id, material, model, inte
     // apply a vector of force to this entity
     force: function(x, y, z){
 			this.checkTriggers("force");
-	
+			
+			if(this.locked) return;
+			
     	this.storeVelocity();
     	
     	this.velocity.x += x;

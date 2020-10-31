@@ -51,6 +51,49 @@ let models = ["cannon.obj", "smugbox.obj", "spoon.obj"];
 modelCache.setPath("static/media/models/ordinary/");
 modelCache.cache(models, modelLoad);
 
+// main
+let gameLoop = createGameLoop((parameters) => {
+	environment.checkScene(); //adds entities to scene TODO make this not stupid
+  
+	environment.clientEntity.setCamera(); // sets the camera's position
+	
+	if( inputListener.keyPressed() ){
+		if(!music.source){
+			audioLoader.load( "static/media/sounds/c3d-funnyskeletonsong.ogg", function(buffer){
+				music.setBuffer(buffer);
+				music.setLoop(true);
+				music.setVolume( 0.1 );
+				music.play();
+			});  
+		}
+	
+  	chat.handleInput(inputListener.keys);
+  }
+	
+	if(document.activeElement !== chat.inputElement && document.pointerLockElement === renderer.domElement){
+		environment.clientEntity.bindInput(inputListener.createInput(["KeyW", "KeyA", "KeyS", "KeyD", "Space", "ShiftLeft", "MouseDelta"]));
+	
+		inputListener.calculateDelta(0.5);
+	}
+	
+	// fetch dynamic entity positions
+	environment.updateClient();
+	environment.update();
+	
+	// debug
+	if(debug){ 
+		chat.debugElement.style.visibility = "visible";
+	} else {
+		chat.debugElement.style.visibility = "hidden";
+	}
+	
+	if(environment.clientEntity.position !== null){
+		chat.updateDebug(environment.clientEntity.position.x, environment.clientEntity.position.y, environment.clientEntity.position.z, environment.clientEntity.rotation.x);
+	}
+}, 65, []);
+
+
+// methods
 function modelLoad(){
   modelCache.load("cannon").scale.set(0.05, 0.05, 0.05);
 	modelCache.load("smugbox").scale.set(0.04, 0.04, 0.04);
@@ -67,11 +110,10 @@ function modelLoad(){
 		z: 0,
 	};
 	
-	// main
+	// init
 	init();
 }
 
-// methods
 function init(){
   // environment
   environment = createEnvironment(socket);
@@ -91,7 +133,7 @@ function init(){
 	// music
   music = new Audio( listener );
   audioLoader = new AudioLoader();
-    
+	
   // clock
   clock = new Clock( false );
   
@@ -117,55 +159,16 @@ function init(){
 }
 
 // called every frame
-function animate(){
+function render(){
   // set delta
 	let delta = clock.getDelta();
 	
   // call next frame
-  requestAnimationFrame( animate );
-	
-  environment.checkScene(); //adds entities to scene TODO make this not stupid
-  
-  environment.clientEntity.setCamera(); // sets the camera's position
-  
-  // if there is an input change request it
-  if( inputListener.keyPressed() ){
-		if(!music.source){
-			audioLoader.load( "static/media/sounds/c3d-funnyskeletonsong.ogg", function(buffer){
-				music.setBuffer(buffer);
-				music.setLoop(true);
-				music.setVolume( 0.1 );
-				music.play();
-			});  
-		}
-	
-  	chat.handleInput(inputListener.keys);
-  }
+  requestAnimationFrame( render );
 
-	if(document.activeElement !== chat.inputElement && document.pointerLockElement === renderer.domElement){
-		environment.clientEntity.bindInput(inputListener.createInput(["KeyW", "KeyA", "KeyS", "KeyD", "Space", "ShiftLeft", "MouseDelta"]));
-	
-		inputListener.calculateDelta(0.5);
-	}
-	
   // render the scene
   renderer.render( environment.scene, camera );
-	
-	// fetch dynamic entity positions
-	environment.updateClient();
-	environment.update();
-	
-	// debug
-	if(debug){ 
-		chat.debugElement.style.visibility = "visible";
-	} else {
-		chat.debugElement.style.visibility = "hidden";
-	}
-	
-	if(environment.clientEntity.position !== null){
-		chat.updateDebug(environment.clientEntity.position.x, environment.clientEntity.position.y, environment.clientEntity.position.z, environment.clientEntity.rotation.x);
-	}
-	
+
 	// update stats
 	stats.update();
 }
@@ -206,7 +209,8 @@ function serverPromptError(error){
 function clientEntityIDResponse(id){
 	environment.clientEntityIDResponse(id, camera);
 	clock.start();
-	animate();	
+	render();
+	gameLoop.running = true;
 }
 
 // bind event listeners
