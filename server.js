@@ -16,7 +16,7 @@ const io = socket(server);
 let sockets = []; //stores sockets
 sockets.pull = pull; //TODO this is stupid
 
-let port = 80; //set to 80 for public
+let port = 8080; //set to 80 for public
 
 // main
 
@@ -24,7 +24,7 @@ let port = 80; //set to 80 for public
 const yborder = -25;
 
 // environment (+map)
-let environment = c3ds.createEnvironment("testEnvironment");
+let environment = c3ds.createEnvironment("testEnvironment"); //I should probably remove the name there's no point
 let chat = c3ds.createChat();
 let map = c3ds.createMap();
 
@@ -96,10 +96,10 @@ let gameLoop = c3ds.createGameLoop(65, () => {
 			g.lookAt(target);
 			
 			if(true/*g.position.x < 9.4 && g.position.x > -9.4*/){
-				g.force(-0.01 * Math.sin(g.rotation.y), 0, 0);
+				g.force(-0.015 * Math.sin(g.rotation.y), 0, 0);
 			}
 			if(true/*g.position.z < 9.4 && g.position.z > -9.4*/){
-				g.force(0, 0, -0.01 * Math.cos(g.rotation.y));
+				g.force(0, 0, -0.015 * Math.cos(g.rotation.y));
 			}
 			
 			/*if(g.position.x > 9.4 || g.position.x < -9.4){
@@ -453,13 +453,13 @@ function initClientEntity(socket){
 			}, 1000, self);
 		}
 		
-		for(let i = 0; i < ghosts.length; i++){
+		/*for(let i = 0; i < ghosts.length; i++){
 			let g = ghosts[i];
 			
 			if(out.id == g.id){
 				self.force(out.velocity.x*1.35, 0, out.velocity.z*1.35);
 			}
-		}
+		}*/
 	});
 	
 	clientEntity.createTrigger(null, "onMapCollide", (self, out, parameters) => {
