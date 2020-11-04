@@ -559,10 +559,10 @@ function createPhysicsEntity(position, rotation, size, id, material, model, inte
     },
     
 		// TODO: this is stupid fix it
-    onMapCollide: function(face){
+    onMapCollide: function(obj){
     	
 			
-			/*//quick math constants
+			//quick math constants
     	let dx = obj.position.x-this.position.x;
     	let dy = obj.position.y-this.position.y;
     	let dz = obj.position.z-this.position.z;
@@ -589,7 +589,7 @@ function createPhysicsEntity(position, rotation, size, id, material, model, inte
     		this.velocity.x = 0;
     	}
 			
-			this.checkTriggers("onMapCollide");*/
+			this.checkTriggers("onMapCollide");
     },
 		
 		// returns position in the next frame using oldVelocity (for checking collisions)
@@ -708,7 +708,7 @@ function createMap(data){
 		// SEND METHODS //
 		
 		sendData: function(socket){
-			socket.emit("serverMapDataResponse", this.objects);
+			socket.emit("serverMapDataResponse", this.collisionMap);
 		},
 		
 		// LOAD METHODS //
@@ -739,21 +739,28 @@ function createMap(data){
 			
 			this.objects = this.parsed.objects;
 			
-			console.log(this.objects.length + " objects parsed, map ready.");
+			console.log(this.objects.length + " objects parsed\ncreating collision map...");
+			
+			this.collisionMap = this.createCollisionMap();
+			
+			console.log(this.collisionMap.length + " faces parsed, map ready.");
 		},
 		
 		// Creates a map object from data
-		createObject: function(position, rotation, size){
+		createObject: function(position, rotation, size, color){
 			return {
 				position: position,
 				rotation: rotation,
 				size: size,
+				color: color
 			};
 		},
 		
 		// Splits cubes into different faces for collision detection
 		createCollisionMap: function(){
 			if(this.objects.length == 0) return console.log("cannot create collision map without parsed map data");
+			
+			let cmap = [];
 			
 			for(let i = 0; i < this.objects.length; i++){
 				let obj = this.objects[i];
@@ -763,12 +770,66 @@ function createMap(data){
 					y: obj.position.y,
 					z: obj.position.z
 				}, {
-					x: 0,
-					y: 0,
+					x: obj.rotation.x,
+					y: obj.rotation.y+(90*Math.PI/180),
+					z: obj.rotation.z
+				}, {
+					x: obj.size.x,
+					y: obj.size.y,
 					z: 0
-				});
-				let px = this.createObject();
+				}, obj.color);
+				let px = this.createObject({
+					x: obj.position.x+obj.size.x/2,
+					y: obj.position.y,
+					z: obj.position.z
+				}, {
+					x: obj.rotation.x,
+					y: obj.rotation.y+(90*Math.PI/180),
+					z: obj.rotation.z
+				}, {
+					x: obj.size.x,
+					y: obj.size.y,
+					z: 0
+				}, obj.color);
+				let nz = this.createObject({
+					x: obj.position.x,
+					y: obj.position.y,
+					z: obj.position.z-obj.size.z/2
+				}, {
+					x: obj.rotation.x,
+					y: obj.rotation.y,
+					z: obj.rotation.z
+				}, {
+					x: obj.size.x,
+					y: obj.size.y,
+					z: 0
+				}, obj.color);
+				
+				let pz = this.createObject({
+					x: obj.position.x,
+					y: obj.position.y,
+					z: obj.position.z+obj.size.z/2
+				}, {
+					x: obj.rotation.x,
+					y: obj.rotation.y,
+					z: obj.rotation.z
+				}, {
+					x: obj.size.x,
+					y: obj.size.y,
+					z: 0
+				}, obj.color);
+				cmap.push(nx, px, nz, pz);
+				
+				/*let collisionObj = {
+					nx: nx,
+					px: px,
+					nz: nz
+				};
+				
+				this.collisionMap.push(collisionObj);*/
 			}
+			
+			return cmap;
 		},
 	};
 }

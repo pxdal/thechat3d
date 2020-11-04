@@ -131,6 +131,12 @@ function createEnvironment(socket){
 					z: object.position.z,
 				};
 				
+				let rotation = {
+					x: object.rotation.x,
+					y: object.rotation.y,
+					z: object.rotation.z
+				};
+				
 				let size = {
 					x: object.size.x,
 					y: object.size.y,
@@ -146,6 +152,10 @@ function createEnvironment(socket){
 				objMesh.position.x = position.x;
 				objMesh.position.y = position.y;
 				objMesh.position.z = position.z;
+				
+				/*objMesh.rotation.x = rotation.x;
+				objMesh.rotation.y = rotation.y;
+				objMesh.rotation.z = rotation.z;*/
 				
 				this.scene.add( objMesh );
 			}	
