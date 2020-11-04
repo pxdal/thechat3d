@@ -559,8 +559,10 @@ function createPhysicsEntity(position, rotation, size, id, material, model, inte
     },
     
 		// TODO: this is stupid fix it
-    onMapCollide: function(obj){
-    	//quick math constants
+    onMapCollide: function(face){
+    	
+			
+			/*//quick math constants
     	let dx = obj.position.x-this.position.x;
     	let dy = obj.position.y-this.position.y;
     	let dz = obj.position.z-this.position.z;
@@ -587,7 +589,7 @@ function createPhysicsEntity(position, rotation, size, id, material, model, inte
     		this.velocity.x = 0;
     	}
 			
-			this.checkTriggers("onMapCollide");
+			this.checkTriggers("onMapCollide");*/
     },
 		
 		// returns position in the next frame using oldVelocity (for checking collisions)
@@ -697,10 +699,11 @@ function createGameLoop(fps, callback){
 
 // Creates a map for the environment, can either be fed data at start or given with loadData functions
 function createMap(data){
-	let r = {
+	return {
 		data: data == undefined ? false : data,
+		parsed: null,
 		objects: [],
-		
+		collisionMap: [],
 		
 		// SEND METHODS //
 		
@@ -721,7 +724,7 @@ function createMap(data){
 		loadData: function(data){ //feeds data to this.data and parses (mainly just a callback for other load functions)
 			console.log("Loading map data...");
 			
-			this.data = JSON.parse(data);
+			this.data = data;
 			
 			this.parseData();
 		},
@@ -732,59 +735,42 @@ function createMap(data){
 		parseData: function(){ //stores object data from map
 			console.log("Parsing map data...");
 			
-			this.objects = this.data.objects;
+			this.parsed = JSON.parse(this.data);
+			
+			this.objects = this.parsed.objects;
 			
 			console.log(this.objects.length + " objects parsed, map ready.");
 		},
 		
-		formatData: function(){ //formats the data like a server entity for collisions (NOTE: returns a seperate array, won't affect existing datA)
-			let formatted = [];
+		// Creates a map object from data
+		createObject: function(position, rotation, size){
+			return {
+				position: position,
+				rotation: rotation,
+				size: size,
+			};
+		},
+		
+		// Splits cubes into different faces for collision detection
+		createCollisionMap: function(){
+			if(this.objects.length == 0) return console.log("cannot create collision map without parsed map data");
 			
 			for(let i = 0; i < this.objects.length; i++){
-				let o = this.objects[i];
+				let obj = this.objects[i];
 				
-				let obj = {
-					position: {
-						x: o[0],
-						y: o[1],
-						z: o[2],
-					},
-					rotation: {
-						x: 0,
-						y: 0,
-						z: 0,
-					},
-					size: {
-						x: o[3],
-						y: o[4],
-						z: o[5],
-					},
-					velocity: {
-						x: 0,
-						y: 0,
-						z: 0,
-					},
-					oldVelocity: {
-						x: 0,
-						y: 0,
-						z: 0,
-					},
-					nextFrame: function(){
-						return {
-							position: this.position,
-							size: this.size,
-						};
-					}
-				};
-				
-				formatted.push(obj);
+				let nx = this.createObject({
+					x: obj.position.x-obj.size.x/2,
+					y: obj.position.y,
+					z: obj.position.z
+				}, {
+					x: 0,
+					y: 0,
+					z: 0
+				});
+				let px = this.createObject();
 			}
-			
-			return formatted;
 		},
 	};
-	
-	return r;
 }
 
 // returns true if obj1 and obj2 are colliding, and are cubes (NOTE: assumes position is center of cube)

@@ -28,7 +28,7 @@ let environment = c3ds.createEnvironment("testEnvironment"); //I should probably
 let chat = c3ds.createChat();
 let map = c3ds.createMap();
 
-map.loadDataFromFile("map.json");
+map.loadDataFromFile("maps/halloween.json");
 
 environment.pushMap(map);
 
