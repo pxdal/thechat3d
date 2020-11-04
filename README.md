@@ -19,6 +19,9 @@ Step 3: run server.js from shell as administrator `> node server.js`
 
 Note that hosting on Apple hasn't been tested, and will remain that way because I don't have an Apple computer nor do I plan on getting one.  Proceed with caution.
 
+If you want to make a server public, you'll have to do some port forwarding.  There are plenty of tutorials online, the only thing you need to know is that The Chat 3D defaults to port 80 (in some releases I accidentally leave it on 8080, so don't forget to change it).  Once you port forward port 80 to your computer's private ip, anyone should be able to access the server simply by going to your public ip address in a web browser.
+
+# Using the C3D Engine
 Want to use the c3d engine for your own projects?  don't.  If you want to make a serious project, use something more reliable.  If you want to make something silly or personal, just know that there's no documentation and the engine is really stupid.  There'll be a lot of unnecessary headaches.
 
 # Info
