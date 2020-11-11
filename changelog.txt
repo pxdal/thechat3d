@@ -1,4 +1,3 @@
-NOTE: SET PORT TO 80 BEFORE PUSHING CHANGES (ALSO DELETE THIS LINE BEFORE PUSHING CHANGES)
-
--Added changelog.txt
 -Created a folder for maps, make root more organized
+-Removed halloween content
+-Added some new content (Smugbox's song, my skybox)

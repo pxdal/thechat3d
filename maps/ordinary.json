@@ -1,0 +1,149 @@
+{
+	"name": "Halloween Map",
+	"objects": [{
+		"position": {
+			"x": 0,
+			"y": -0.5,
+			"z": 0
+		},
+		"rotation": {
+			"x": 0,
+			"y": 0,
+			"z": 0
+		},
+		"size": {
+			"x": 20,
+			"y": 1,
+			"z": 20
+		},
+		"color": "0x19abb0",
+		"texture": ""
+	}, {
+		"position": {
+			"x": 6,
+			"y": 0.8,
+			"z": -7
+		},
+		"rotation": {
+			"x": 0,
+			"y": 0,
+			"z": 0
+		},
+		"size": {
+			"x": 3,
+			"y": 2,
+			"z": 3
+		},
+		"color": "0x3ef1f7",
+		"texture": ""
+	}, {
+		"position": {
+			"x": 2,
+			"y": 0.5,
+			"z": -7
+		},
+		"rotation": {
+			"x": 0,
+			"y": 0,
+			"z": 0
+		},
+		"size": {
+			"x": 2,
+			"y": 1,
+			"z": 4
+		},
+		"color": "0x3ef1f7",
+		"texture": ""
+	}, {
+		"position": {
+			"x": 6,
+			"y": 2,
+			"z": -3
+		},
+		"rotation": {
+			"x": 0,
+			"y": 0,
+			"z": 0
+		},
+		"size": {
+			"x": 2,
+			"y": 1,
+			"z": 2 
+		},
+		"color": "0x3ef1f7",
+		"texture": ""
+	}, {
+		"position": {
+			"x": 6.5,
+			"y": 3,
+			"z": 0.2
+		},
+		"rotation": {
+			"x": 0,
+			"y": 0,
+			"z": 0
+		},
+		"size": {
+			"x": 2,
+			"y": 1,
+			"z": 2
+		},
+		"color": "0x3ef1f7",
+		"texture": ""
+	}, {
+		"position": {
+			"x": 5.9,
+			"y": 3.6,
+			"z": 3.2
+		},
+		"rotation": {
+			"x": 0,
+			"y": 0,
+			"z": 0
+		},
+		"size": {
+			"x": 2,
+			"y": 1,
+			"z": 2
+		},
+		"color": "0x3ef1f7",
+		"texture": ""
+	}, {
+		"position": {
+			"x": -5.5,
+			"y": 0.05,
+			"z": -2
+		},
+		"rotation": {
+			"x": 0,
+			"y": 0,
+			"z": 0
+		},
+		"size": {
+			"x": 2,
+			"y": 1,
+			"z": 2
+		},
+		"color": "0x3ef1f7",
+		"texture": ""
+	}, {
+		"position": {
+			"x": 2.5,
+			"y": 4.05,
+			"z": 4
+		},
+		"rotation": {
+			"x": 0,
+			"y": 0,
+			"z": 0
+		},
+		"size": {
+			"x": 2,
+			"y": 1,
+			"z": 2
+		},
+		"color": "0x3ef1f7",
+		"texture": ""
+	}],
+	"entities": []
+}

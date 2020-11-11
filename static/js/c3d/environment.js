@@ -153,15 +153,15 @@ function createEnvironment(socket){
 				objMesh.position.y = position.y;
 				objMesh.position.z = position.z;
 				
-				/*objMesh.rotation.x = rotation.x;
-				objMesh.rotation.y = rotation.y;
-				objMesh.rotation.z = rotation.z;*/
+				console.log(rotation);
+				
+				objMesh.rotation.set(rotation.x, rotation.y, rotation.z, "XYZ");
 				
 				this.scene.add( objMesh );
 			}	
 			
-			let ambience = new AmbientLight(0x404040);
-			let light = new DirectionalLight(0x753b00, 0.6);
+			let ambience = new AmbientLight(0x404040, 0.8);
+			let light = new DirectionalLight(0xffffff, 0.5);
 						
 			light.position.x = -0.3;
 			

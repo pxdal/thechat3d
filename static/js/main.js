@@ -18,7 +18,7 @@ let far = 1000;
 // textures
 let cubeMapLoader = new THREE.CubeTextureLoader();
 
-cubeMapLoader.setPath('static/media/textures/halloween_event/bg/');
+cubeMapLoader.setPath('static/media/textures/ordinary/sky_space/');
 
 pog = cubeMapLoader.load( [
 	'px.jpg',
@@ -33,7 +33,7 @@ pog = cubeMapLoader.load( [
 let inputListener = createInputListener();
 
 let textures = ["smiley.png", "stonks.png", "space.jpg", "ahh.png", "smugbox.png"];
-let halloweenTextures = ["stolen_skybox.png", "spoky.png", "boo.png"];
+let halloweenTextures = ["stolen_skybox.png", "spoky.png", "boo.png", "jujucat.png"];
 
 let textureCache = createTextureCache();
 let modelCache = createModelCache();
@@ -59,10 +59,10 @@ let gameLoop = createGameLoop((parameters) => {
 	
 	if( inputListener.keyPressed() ){
 		if(!music.source){
-			audioLoader.load( "static/media/sounds/c3d-funnyskeletonsong.ogg", function(buffer){
+			audioLoader.load( "static/media/sounds/c3d-dumbshit.ogg", function(buffer){
 				music.setBuffer(buffer);
 				music.setLoop(true);
-				music.setVolume( 0.1 );
+				music.setVolume( 0.125 );
 				music.play();
 			});  
 		}

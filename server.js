@@ -16,7 +16,7 @@ const io = socket(server);
 let sockets = []; //stores sockets
 sockets.pull = pull; //TODO this is stupid
 
-let port = 8080; //set to 80 for public
+let port = 80; //set to 80 for public
 
 // main
 
@@ -28,7 +28,7 @@ let environment = c3ds.createEnvironment("testEnvironment"); //I should probably
 let chat = c3ds.createChat();
 let map = c3ds.createMap();
 
-map.loadDataFromFile("maps/halloween.json");
+map.loadDataFromFile("maps/ordinary.json");
 
 environment.pushMap(map);
 
@@ -36,28 +36,15 @@ environment.pushMap(map);
 // the chat bot
 let theChatBot = {
 	username: "The Chat Bot",
-	color: "fa5c00", //e31e31
+	color: "e31e31",
 };
 chat.pushUser(theChatBot);
 
 // test entities
-let logan = c3ds.createPhysicsEntity({x: -1.0, y: 0.1, z: 7.0}, {x: -90*Math.PI/180, y: 270*Math.PI/180, z: -90*Math.PI/180}, {x: 1.0, y: 1.0, z: 1.5}, environment.generateID(), randomColor(), "cannon", false, "null");
+let logan = c3ds.createPhysicsEntity({x: 8.5, y: 0.1, z: 8.5}, {x: -90*Math.PI/180, y: 315*Math.PI/180, z: -90*Math.PI/180}, {x: 1.0, y: 1.0, z: 1.5}, environment.generateID(), randomColor(), "cannon", false, "null");
 logan.gravity = 0;
 
 environment.pushServerEntity(logan);
-
-let ghostUser = {
-	username: "Ghost",
-	color: "e6d1be",
-}
-chat.pushUser(ghostUser);
-
-let ghosts = [];
-
-let g = createGhost(randomCoords(16, 0, 16), randomCoords(0, Math.PI*2, 0));
-	
-ghosts.push(g);
-environment.pushServerEntity(g);
 
 // game loop (65fps)
 
@@ -65,55 +52,13 @@ let gravity = -0.01;
 
 let f = 0;
 
-let mRate = 7800; //2 min
-let eRate = 650;
-let ghostTimer = 0;
-let ghostActive = null;
-
 let gameLoop = c3ds.createGameLoop(65, () => {	
 	// gravity
 	environment.gravity();
 	
 	// input
 	environment.requestInputAll();
-	
-	// boo!
-	if(f % mRate == 0){
-		chat.createMessage(ghostUser.username, ghostUser.color, "Boo!", sockets);
-	}
 
-	if(f % eRate == 0){
-		ghostTimer = 0;
-		ghostActive = Math.floor(Math.random() * (ghosts.length-0.001));
-	}
-	
-	if(ghostTimer > 0 && ghosts[ghostActive]){
-		let g = ghosts[ghostActive];
-		let target;
-		if(environment.getEntityBySocket(sockets[ghostActive]) && !g.launching){ 
-			target = environment.getEntityBySocket(sockets[ghostActive]);
-
-			g.lookAt(target);
-			
-			if(true/*g.position.x < 9.4 && g.position.x > -9.4*/){
-				g.force(-0.015 * Math.sin(g.rotation.y), 0, 0);
-			}
-			if(true/*g.position.z < 9.4 && g.position.z > -9.4*/){
-				g.force(0, 0, -0.015 * Math.cos(g.rotation.y));
-			}
-			
-			/*if(g.position.x > 9.4 || g.position.x < -9.4){
-				g.position.x = Math.sign(g.position.x) * 9.35;
-			}
-			
-			if(g.position.z > 9.4 || g.position.z < -9.4){
-				g.position.z = Math.sign(g.position.z) * 9.35;
-			}*/
-		}
-		
-		ghostTimer--;
-	}
-	
 	// update entities
 	environment.update(yborder);
 	
@@ -288,9 +233,6 @@ function disconnect(reason, socket){
 	
 	environment.pullServerEntity(client); //if the client intentionally disconnected, pull entity
 	
-	let g = ghosts.shift();
-	environment.pullServerEntity(g);
-	
 	sockets.pull(socket);
 	
 	let user = chat.getUserBySocket(socket);
@@ -314,10 +256,6 @@ function clientReady(socket){
 	environment.pushServerEntity(clientEntity);
 	
 	chat.getUserBySocket(socket).color = chat.toHex(environment.getColor(socket));
-	
-	let g = createGhost(randomCoords(16, 0, 16), randomCoords(0, Math.PI*2, 0));
-	ghosts.push(g);
-	environment.pushServerEntity(g);
 		
 	// Send map data
 	environment.map.sendData(socket);
@@ -406,7 +344,7 @@ function pull(element){
 function initClientEntity(socket){
 	let user = chat.getUserBySocket(socket);
 	
-	let face = "spoky";
+	let face = "jujucat";
 	let model = "null";
 	
 	if(user.username.toLowerCase() == "smugbox" || user.username.toLowerCase() == "ryan"){
@@ -423,7 +361,7 @@ function initClientEntity(socket){
 	clientEntity.createTrigger(null, "onCollide", (self, out, parameters) => {
 		if(out.id == logan.id){
 			if(!self.interactive) return;
-			
+
 			self.interactive = false;
 			self.locked = true;
 			self.gravity = 0;
@@ -437,7 +375,7 @@ function initClientEntity(socket){
 			self.position.z = logan.position.z;
 			
 			self.rotation.x = 0;
-			self.rotation.y = 180*Math.PI/180;
+			self.rotation.y = 270*Math.PI/180;
 			self.rotation.z = 0;
 			
 			self.cameraRotation.x = self.rotation.x ;
@@ -449,7 +387,7 @@ function initClientEntity(socket){
 				s.interactive = true;
 				s.locked = false;
 				s.speedcap = false;
-				s.force(0, 2, 2);
+				s.force(1.5, 1, 1.5);
 			}, 1000, self);
 		}
 		
@@ -489,6 +427,8 @@ function createGhost(position, rotation){
 		if(out.id == logan.id){
 			if(self.locked) return;
 			
+			
+			
 			self.locked = true;
 			self.interactive = false;
 			self.launching = true;
@@ -508,10 +448,12 @@ function createGhost(position, rotation){
 			self.rotation.z = 0;
 			
 			setTimeout((s) => {
+				let base = 270*Math.PI/180;
+				
 				s.gravity = -0.01;
 				s.locked = false;
 				s.speedcap = false;
-				s.force(0, 2, 2);
+				s.force(1.5*(base-logan.rotation.y)/base, 2, 1.5*logan.rotation.y/base);
 			}, 1000, self);
 		}
 	});

@@ -708,7 +708,7 @@ function createMap(data){
 		// SEND METHODS //
 		
 		sendData: function(socket){
-			socket.emit("serverMapDataResponse", this.collisionMap);
+			socket.emit("serverMapDataResponse", this.objects);
 		},
 		
 		// LOAD METHODS //
@@ -739,11 +739,12 @@ function createMap(data){
 			
 			this.objects = this.parsed.objects;
 			
-			console.log(this.objects.length + " objects parsed\ncreating collision map...");
+			console.log(this.objects.length + " objects parsed, map ready.");
+			//console.log(this.objects.length + " objects parsed\ncreating collision map...");
 			
-			this.collisionMap = this.createCollisionMap();
+			/*this.collisionMap = this.createCollisionMap();
 			
-			console.log(this.collisionMap.length + " faces parsed, map ready.");
+			console.log(this.collisionMap.length + " faces parsed, map ready.");*/
 		},
 		
 		// Creates a map object from data
@@ -774,10 +775,11 @@ function createMap(data){
 					y: obj.rotation.y+(90*Math.PI/180),
 					z: obj.rotation.z
 				}, {
-					x: obj.size.x,
+					x: obj.size.z,
 					y: obj.size.y,
 					z: 0
 				}, obj.color);
+				
 				let px = this.createObject({
 					x: obj.position.x+obj.size.x/2,
 					y: obj.position.y,
@@ -787,10 +789,11 @@ function createMap(data){
 					y: obj.rotation.y+(90*Math.PI/180),
 					z: obj.rotation.z
 				}, {
-					x: obj.size.x,
+					x: obj.size.z,
 					y: obj.size.y,
 					z: 0
 				}, obj.color);
+				
 				let nz = this.createObject({
 					x: obj.position.x,
 					y: obj.position.y,
@@ -818,7 +821,36 @@ function createMap(data){
 					y: obj.size.y,
 					z: 0
 				}, obj.color);
-				cmap.push(nx, px, nz, pz);
+				
+				let ny = this.createObject({
+					x: obj.position.x,
+					y: obj.position.y-obj.size.y/2,
+					z: obj.position.z
+				}, {
+					x: obj.rotation.x,
+					y: obj.rotation.y,
+					z: obj.rotation.z
+				}, {
+					x: obj.size.x,
+					y: 0,
+					z: obj.size.z
+				}, obj.color);
+				
+				let py = this.createObject({
+					x: obj.position.x,
+					y: (Math.cos((90*Math.PI/180)-obj.rotation.x)*(obj.size.y/2))+obj.position.y+obj.size.y/2,
+					z: (Math.cos((90*Math.PI/180)-obj.rotation.x)*(obj.size.y/2))+obj.position.z
+				}, {
+					x: obj.rotation.x,
+					y: obj.rotation.y,
+					z: obj.rotation.z
+				}, {
+					x: obj.size.x,
+					y: 0,
+					z: obj.size.z
+				}, obj.color);
+				
+				cmap.push(nx, px, ny, py, nz, pz);
 				
 				/*let collisionObj = {
 					nx: nx,
