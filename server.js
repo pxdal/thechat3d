@@ -1,4 +1,4 @@
-// white noise
+// cunk
 
 // load modules
 const path = require("path");
@@ -344,7 +344,7 @@ function pull(element){
 function initClientEntity(socket){
 	let user = chat.getUserBySocket(socket);
 	
-	let face = "jujucat";
+	let face = "smiley";
 	let model = "null";
 	
 	if(user.username.toLowerCase() == "smugbox" || user.username.toLowerCase() == "ryan"){
