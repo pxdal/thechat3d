@@ -16,7 +16,7 @@ const io = socket(server);
 let sockets = []; //stores sockets
 sockets.pull = pull; //TODO this is stupid
 
-let port = 80; //set to 80 for public
+let port = 8080; //set to 80 for public
 
 // main
 
@@ -108,7 +108,7 @@ let commandLoop = c3ds.createGameLoop(2, () => {
 		
 		/* Commands start here */
 		switch(command){
-			case "stop": //kick all sockets from the server and shutdown
+			case "stop": {//kick all sockets from the server and shutdown
 				
 				console.log("kicking sockets...");
 				for(let i = 0; i < sockets.length; i++){
@@ -119,12 +119,13 @@ let commandLoop = c3ds.createGameLoop(2, () => {
 				io.close();
 				
 				break;
-			case "bindUsername": //bind socket to client by username for other commands which require it
+			}
+			case "bindUsername": { //bind socket to client by username for other commands which require it
 				console.log("binding username");
 				
 				let username = combine(parameters);
 				
-				let user = chat.getUserBySocket(username);
+				let user = chat.getUserByUsername(username);
 				
 				if(user == null){
 					console.log("invalid username: [" + username + "]");
@@ -134,22 +135,46 @@ let commandLoop = c3ds.createGameLoop(2, () => {
 				client = user.socket;
 				
 				break;
+			}
 			case "changePos": //change position of bound client
-				if(client == null) break;
-				
+			case "changePosition":
+			case "changeP":
+			case "cp": {
 				let entity = environment.getEntityBySocket(client);
 				
-				let x = parameters[0] == "~" ? entity.position.x : parameters[0];
-				let y = parameters[1] == "~" ? entity.position.y : parameters[1];
-				let z = parameters[2] == "~" ? entity.position.z : parameters[2];
+				if(entity == null) return;
 				
+				let x = parameters[0] == "~" ? entity.position.x : parseFloat(parameters[0], 10);
+				let y = parameters[1] == "~" ? entity.position.y : parseFloat(parameters[1], 10);
+				let z = parameters[2] == "~" ? entity.position.z : parseFloat(parameters[2], 10);
+						
 				entity.position.x = x;
 				entity.position.y = y;
 				entity.position.z = z;
 				
 				console.log("User: " + chat.getUserBySocket(client).username + "'s position was changed to: " + entity.position.x + ", " + entity.position.y + ", " + entity.position.z);
 				break;
-			case "sendMessage": //send a message from the server as "Server"
+			}
+			case "changeVelocity":
+			case "changeVel":
+			case "changeV":
+			case "cv": {
+				let entity = environment.getEntityBySocket(client);
+				
+				if(entity == null) return;
+				
+				let x = parameters[0] == "~" ? entity.velocity.x : parseFloat(parameters[0], 10);
+				let y = parameters[1] == "~" ? entity.velocity.y : parseFloat(parameters[1], 10);
+				let z = parameters[2] == "~" ? entity.velocity.z : parseFloat(parameters[2], 10);
+				
+				entity.velocity.x = x;
+				entity.velocity.y = y;
+				entity.velocity.z = z;
+				
+				console.log("User: " + chat.getUserBySocket(client).username + "'s velocity was changed to: " + entity.velocity.x + ", " + entity.velocity.y + ", " + entity.velocity.z);
+				break;
+			}
+			case "sendMessage": {//send a message from the server as "Server"
 				let serverUser = {
 					username: "Server",
 					color: "8a8a8a",
@@ -161,6 +186,7 @@ let commandLoop = c3ds.createGameLoop(2, () => {
 				
 				console.log("message sent from server: " + message);
 				break;
+			}
 			default:
 				break;
 		}

@@ -153,8 +153,6 @@ function createEnvironment(socket){
 				objMesh.position.y = position.y;
 				objMesh.position.z = position.z;
 				
-				console.log(rotation);
-				
 				objMesh.rotation.set(rotation.x, rotation.y, rotation.z, "XYZ");
 				
 				this.scene.add( objMesh );

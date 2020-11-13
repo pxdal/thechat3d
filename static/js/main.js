@@ -88,7 +88,11 @@ let gameLoop = createGameLoop((parameters) => {
 	}
 	
 	if(environment.clientEntity.position !== null){
-		chat.updateDebug(environment.clientEntity.position.x, environment.clientEntity.position.y, environment.clientEntity.position.z, environment.clientEntity.rotation.x);
+		try {
+			chat.updateDebug(environment.clientEntity.position.x, environment.clientEntity.position.y, environment.clientEntity.position.z, environment.clientEntity.rotation.x);
+		} catch ( e ){
+			console.log(environment.clientEntity.position.y);
+		}
 	}
 }, 65, []);
 
