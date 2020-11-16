@@ -120,6 +120,7 @@ let commandLoop = c3ds.createGameLoop(2, () => {
 				
 				break;
 			}
+			case "bu":
 			case "bindUsername": { //bind socket to client by username for other commands which require it
 				console.log("binding username");
 				
@@ -133,6 +134,24 @@ let commandLoop = c3ds.createGameLoop(2, () => {
 				}
 				
 				client = user.socket;
+				
+				break;
+			}
+			case "bindId":
+			case "bindID":
+			case "bi": {
+				console.log("binding id");
+				
+				let id = combine(parameters);
+				
+				let entity = environment.getEntityByID(id);
+				
+				if(entity == null){
+					console.log("invalid id: " + id);
+					break;
+				}
+				
+				client = entity.socket;
 				
 				break;
 			}
@@ -152,7 +171,7 @@ let commandLoop = c3ds.createGameLoop(2, () => {
 				entity.position.y = y;
 				entity.position.z = z;
 				
-				console.log("User: " + chat.getUserBySocket(client).username + "'s position was changed to: " + entity.position.x + ", " + entity.position.y + ", " + entity.position.z);
+				console.log("User [" + chat.getUserBySocket(client).username + "] position was changed to: " + entity.position.x + ", " + entity.position.y + ", " + entity.position.z);
 				break;
 			}
 			case "changeVelocity":
@@ -171,9 +190,10 @@ let commandLoop = c3ds.createGameLoop(2, () => {
 				entity.velocity.y = y;
 				entity.velocity.z = z;
 				
-				console.log("User: " + chat.getUserBySocket(client).username + "'s velocity was changed to: " + entity.velocity.x + ", " + entity.velocity.y + ", " + entity.velocity.z);
+				console.log("User [" + chat.getUserBySocket(client).username + "] velocity was changed to: " + entity.velocity.x + ", " + entity.velocity.y + ", " + entity.velocity.z);
 				break;
 			}
+			case "sm":
 			case "sendMessage": {//send a message from the server as "Server"
 				let serverUser = {
 					username: "Server",
@@ -185,6 +205,35 @@ let commandLoop = c3ds.createGameLoop(2, () => {
 				chat.createMessage(serverUser.username, serverUser.color, message, sockets);
 				
 				console.log("message sent from server: " + message);
+				break;
+			}
+			case "onlineList":
+			case "ol": {
+				console.log("Online users:");
+				
+				/*for(let i = 0; i < sockets.length; i++){
+					let s = sockets[i];
+					let u = chat.getUserBySocket(s);
+					let e = environment.getEntityBySocket(s);
+					
+					if(u == null || e == null){
+						console.log("A socket is connected but doesn't have a username or bound entity");
+						continue;
+					}
+					
+					console.log("Username: [" + u.username + "], Entity ID: " + e.id);
+				}*/
+				
+				for(let i = 0; i < chat.users.length; i++){
+					let u = chat.users[i];
+					let e = environment.getEntityBySocket(u.socket);
+					
+					let uname = u.username == undefined ? "This socket has no bound user" : "[" + u.username + "]";
+					let id = e.id == undefined ? "This user has no bound entity" : e.id;
+					
+					console.log("Username " + uname + ", Entity ID: " + id);
+				}
+				
 				break;
 			}
 			default:
@@ -378,7 +427,7 @@ function initClientEntity(socket){
 		//model = "smugbox";
 	}
 	
-	let clientEntity = c3ds.createSocketBoundEntity(randomCoords(16, 0, 16), randomCoords(0, Math.PI*2, 0), {x: 1, y: 1, z: 1}, environment.generateID(), randomSpokyColor(), model, socket, true, face); //create a new entity for the client
+	let clientEntity = c3ds.createSocketBoundEntity(randomCoords(16, 0, 16), randomCoords(0, Math.PI*2, 0), {x: 1, y: 1, z: 1}, environment.generateID(), randomColor(), model, socket, true, face); //create a new entity for the client
 	
 	while(clientEntity.checkMapCollisions(environment.map.objects)){
 		clientEntity.position = randomCoords(16, 0, 16);

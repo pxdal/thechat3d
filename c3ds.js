@@ -41,22 +41,25 @@ function createEnvironment(name){
     	let sensitivity = 100;
 			
 			if(input[6]){
-				if(entity.cameraRotation.x > Math.PI/2 || entity.cameraRotation.x < -Math.PI/2){
-					entity.cameraRotation.x = (entity.cameraRotation.x/Math.abs(entity.cameraRotation.x)) * Math.PI/2;
-				} else if(entity.cameraRotation.x == Math.PI/2){
+				if(entity.rotation.x > Math.PI/2 || entity.rotation.x < -Math.PI/2){
+					entity.rotation.x = (entity.rotation.x/Math.abs(entity.rotation.x)) * Math.PI/2;
+				} else if(entity.rotation.x == Math.PI/2){
 					if(input[6].y/Math.abs(input[6].y) == 1){
-						entity.cameraRotation.x -= input[6].y/sensitivity;
+						entity.rotation.x -= input[6].y/sensitivity;
 					}
-				} else if(entity.cameraRotation.x == -Math.PI/2){
+				} else if(entity.rotation.x == -Math.PI/2){
 					if(input[6].y/Math.abs(input[6].y) == -1){
-						entity.cameraRotation.x -= input[6].y/sensitivity;
+						entity.rotation.x -= input[6].y/sensitivity;
 					}
 				} else {
-					entity.cameraRotation.x -= input[6].y/sensitivity;
+					entity.rotation.x -= input[6].y/sensitivity;
 				}
 				
 				entity.rotation.y -= input[6].x/100;
+				
+				entity.cameraRotation.x = entity.rotation.x;
 				entity.cameraRotation.y = entity.rotation.y;
+				entity.cameraRotation.z = entity.rotation.z;
 			}
 			
 			// forward/backward
@@ -739,12 +742,11 @@ function createMap(data){
 			
 			this.objects = this.parsed.objects;
 			
-			console.log(this.objects.length + " objects parsed, map ready.");
-			//console.log(this.objects.length + " objects parsed\ncreating collision map...");
+			console.log(this.objects.length + " objects parsed\ncreating collision map...");
 			
-			/*this.collisionMap = this.createCollisionMap();
+			this.collisionMap = this.createCollisionMap();
 			
-			console.log(this.collisionMap.length + " faces parsed, map ready.");*/
+			console.log(this.collisionMap.length + " faces parsed, map ready.");
 		},
 		
 		// Creates a map object from data
@@ -851,14 +853,6 @@ function createMap(data){
 				}, obj.color);
 				
 				cmap.push(nx, px, ny, py, nz, pz);
-				
-				/*let collisionObj = {
-					nx: nx,
-					px: px,
-					nz: nz
-				};
-				
-				this.collisionMap.push(collisionObj);*/
 			}
 			
 			return cmap;

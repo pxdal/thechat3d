@@ -6,7 +6,7 @@ const socket = io();
 // whether or not to display debug info
 let debug = false; //defaults to false
 
-// environment/camera/renderer
+// globals
 let environment, chat, camera, listener, audioLoader, music, renderer, stats, clock, pog;
 
 // camera
