@@ -67,8 +67,8 @@ let gameLoop = createGameLoop((parameters) => {
 			});  
 		}
 	
-  	chat.handleInput(inputListener.keys);
-  }
+		chat.handleInput(inputListener.keys);
+	}
 	
 	if(document.activeElement !== chat.inputElement && document.pointerLockElement === renderer.domElement){
 		environment.clientEntity.bindInput(inputListener.createInput(["KeyW", "KeyA", "KeyS", "KeyD", "Space", "ShiftLeft", "MouseDelta"]));
@@ -99,7 +99,7 @@ let gameLoop = createGameLoop((parameters) => {
 
 // methods
 function modelLoad(){
-  modelCache.load("cannon").scale.set(0.05, 0.05, 0.05);
+	modelCache.load("cannon").scale.set(0.05, 0.05, 0.05);
 	modelCache.load("smugbox").scale.set(0.04, 0.04, 0.04);
 	
 	modelCache.load("cannon").modelPosition = {
@@ -119,8 +119,8 @@ function modelLoad(){
 }
 
 function init(){
-  // environment
-  environment = createEnvironment(socket);
+	// environment
+	environment = createEnvironment(socket);
 	//set bg
 	environment.scene.background = pog;
 
@@ -129,25 +129,25 @@ function init(){
 	chat.initInput();
 	chat.initDomElement(document.body);
 	
-  // camera + audio listener
-  camera = new PerspectiveCamera( fov, aspect, near, far );
-  listener = new AudioListener();
-  camera.add( listener );
+	// camera + audio listener
+	camera = new PerspectiveCamera( fov, aspect, near, far );
+	listener = new AudioListener();
+	camera.add( listener );
 	
 	// music
-  music = new Audio( listener );
-  audioLoader = new AudioLoader();
+	music = new Audio( listener );
+	audioLoader = new AudioLoader();
 	
-  // clock
-  clock = new Clock( false );
+	// clock
+	clock = new Clock( false );
   
-  // stats
-  stats = createStats();
+	// stats
+	stats = createStats();
 	document.body.append( stats.dom );
 	
-  // renderer
-  renderer = initRenderer();
-		  
+	// renderer
+	renderer = initRenderer();
+
 	// input
 	inputListener.addCallback("click", (e) => {
 		renderer.domElement.requestPointerLock = renderer.domElement.requestPointerLock || renderer.domElement.mozRequestPointerLock;
@@ -159,19 +159,19 @@ function init(){
 	
 	bindSocketEvents();
 	
-  socket.emit("clientReady");
+	socket.emit("clientReady");
 }
 
 // called every frame
 function render(){
-  // set delta
+	// set delta
 	let delta = clock.getDelta();
 	
-  // call next frame
-  requestAnimationFrame( render );
+	// call next frame
+	requestAnimationFrame( render );
 
-  // render the scene
-  renderer.render( environment.scene, camera );
+	// render the scene
+	renderer.render( environment.scene, camera );
 
 	// update stats
 	stats.update();
@@ -190,16 +190,16 @@ function createStats(){
 
 // event handlers
 function resize(){
-  //set aliases
-  width = window.innerWidth;
-  height = window.innerHeight;
+	//set aliases
+	width = window.innerWidth;
+	height = window.innerHeight;
   
-  //update renderer
-  renderer.setSize( width, height );
+	//update renderer
+	renderer.setSize( width, height );
   
-  //update camera
-  camera.aspect = width/height;
-  camera.updateProjectionMatrix();
+	//update camera
+	camera.aspect = width/height;
+	camera.updateProjectionMatrix();
 }
 
 function unload(){
@@ -237,6 +237,3 @@ function bindSocketEvents(){
 //window
 window.addEventListener("unload", unload);
 window.addEventListener("resize", resize);
-
-
-
