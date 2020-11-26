@@ -33,7 +33,6 @@ map.loadDataFromFile("maps/thanksgiving.json");
 
 environment.pushMap(map);
 
-
 // the chat bot
 let theChatBot = {
 	username: "The Chat Bot",
@@ -44,12 +43,6 @@ chat.pushUser(theChatBot);
 // test entities
 let logan = c3ds.createPhysicsEntity({x: 8.5, y: 0.1, z: 8.5}, {x: -90*Math.PI/180, y: 315*Math.PI/180, z: -90*Math.PI/180}, {x: 1.0, y: 1.0, z: 1.5}, environment.generateID(), randomColor(), "cannon", false, "null");
 logan.gravity = 0;
-
-let cd = c3ds.createCountdownEntity({x: 0, y: 0, z: 0}, {x: 0, y: 0, z: 0}, {x: 0, y: 0, z: 0}, environment.generateID(), new Date(2020, 10, 26, 12, 0, 0));
-console.log("Event scheduled for: " + cd.date.toString());
-cd.onCountdownEnd = function(){
-	console.log("nidhuiajsiojdoad");
-};
 
 environment.pushServerEntity(logan);
 
