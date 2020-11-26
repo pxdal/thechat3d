@@ -28,6 +28,8 @@ function createEnvironment(name){
       }
       let dynamic = entity.dynamic();
       
+			if(!dynamic || dynamic == null) return;
+			
       socket.emit("serverEntityDynamicResponse", dynamic, id);
     },
 
@@ -124,7 +126,7 @@ function createEnvironment(name){
 				entity.checkCollisions(this.serverEntities);
 				
 				//check collisions of map
-				entity.checkMapCollisions(this.map.objects);
+				entity.checkMapCollisions(this.map.collisionMap);
 				
 				if(entity.position.y < yborder){
 					entity.respawn();
@@ -134,7 +136,7 @@ function createEnvironment(name){
 			for(let i = 0; i < this.serverEntities.length; i++){
 				let entity = this.serverEntities[i];
 				
-				if(entity.type >= 1){
+				if(entity.type == 1 || entity.type == 2){
 					if(entity.speedcap) entity.force(-entity.velocity.x/10, 0, -entity.velocity.z/10);
 					entity.update();
 				}
@@ -258,7 +260,7 @@ function createEnvironment(name){
 			for(let i = 0; i < this.serverEntities.length; i++){
 				let entity = this.serverEntities[i];
 				
-				if(entity.type >= 1){
+				if(entity.type == 1 || entity.type == 2){
 					entity.force(0, entity.gravity, 0);
 				}
 			}
@@ -563,7 +565,35 @@ function createPhysicsEntity(position, rotation, size, id, material, model, inte
     
 		// TODO: this is stupid fix it
     onMapCollide: function(obj){
-    	
+    	/*
+			{
+				position: position,
+				rotation: rotation,
+				size: size,
+				color: color
+			}
+			*/
+			
+			/*
+			// const.
+			let n = 90 * Math.PI/180;
+			
+			// throttle
+			let tx = this.velocity.x * (obj.rotation.y/n);
+			let ty = this.velocity.y * (obj.rotation.x/n);
+			let tz = this.velocity.z * (obj.rotation.y/n);*/
+			
+			// apply
+			/*console.log("p: " + obj.position.x + ", " + obj.position.y + ", " + obj.position.z);
+			console.log("r: " + obj.rotation.x + ", " + obj.rotation.y + ", " + obj.rotation.z);*/
+			/*
+			//this.velocity.x = tx;
+			this.velocity.y = ty;
+			//this.velocity.z = tz;
+			
+			if(ty == 0) this.onGround = true;*/
+			
+				
 			
 			//quick math constants
     	let dx = obj.position.x-this.position.x;
@@ -616,9 +646,11 @@ function createPhysicsEntity(position, rotation, size, id, material, model, inte
     		
     		if(obj.id == this.id) continue;
     		
-    		if( rrCol(this.nextFrame(), obj.nextFrame()) ){
-    			this.onCollide(obj);
-    		}
+				if(obj.nextFrame){
+					if( rrCol(this.nextFrame(), obj.nextFrame()) ){
+						this.onCollide(obj);
+					}
+				}
     	}
     },
     
@@ -696,6 +728,94 @@ function createSocketBoundEntity(position, rotation, size, id, material, geometr
 	return extend(createPhysicsEntity(position, rotation, size, id, material, geometry, interactive, face), n);
 }
 
+// creates a stopwatch which counts up infinitely by rate (recommended rate is 1 ms for precision)
+function createStopwatchEntity(position, rotation, size, id, rate){
+	let n = {
+		type: 3,
+		time: 0,
+		interval: null,
+		rate: rate,
+		
+		onTick: function(){}, //function which will be called when stopwatch ticks, can be set by programmer
+		
+		start: function(){
+			this.interval = setInterval(() => {
+				this.time++;
+				this.onTick();
+			}, this.rate);
+		},
+		
+		dynamic: function(){
+			return;
+		}
+	};
+	
+	return extend(createServerEntity(position, rotation, size, id), n);
+}
+
+// counts down from amount to 0 (sadly only by milliseconds, rate cannot be set unlike stopwatch)
+function createTimerEntity(position, rotation, size, id, amount){
+	let n = {
+		type: 4,
+		timeout: null,
+		amount: amount,
+		
+		onTimerEnd: function(){}, //function which will be called when timer hits zero, can be set by programmer
+		
+		start: function(){
+			this.time = this.amount;
+			
+			this.timeout = setTimeout(() => {
+				this.onTimerEnd();
+				clearTimeout(this.timeout);
+			}, this.amount);
+		},
+		
+		dynamic: function(){
+			return;
+		}
+	};
+	
+	return extend(createServerEntity(position, rotation, size, id), n);
+}
+
+// counts up in seconds until date is reached, good for consistent countdowns for events
+function createCountdownEntity(position, rotation, size, id, date){
+	let n = {
+		date: date,
+		time: 0,
+		interval: null,
+		
+		onCountdownEnd: function(){}, //function which will be called when countdown hits zero, can be set by programmer
+		onTick: function(){}, //function which will be called when countdown ticks, can be set by programmer
+		
+		start: function(){
+			this.interval = setInterval(() => {
+				this.check();
+				this.onTick();
+			}, 1000);
+		},
+		
+		check: function(){
+			let current = Date.now();
+			let elapsed = this.date - current;
+			
+			this.time = elapsed;
+			
+			if(elapsed <= 0){
+				clearInterval(this.interval);
+				this.onCountdownEnd();
+			}
+		},
+		
+		dynamic: function(){
+			return;
+		}
+	};
+	
+	return extend(createServerEntity(position, rotation, size, id), n);
+}
+
 function createGameLoop(fps, callback){
 	return setInterval(callback, 1000/fps);
 }
@@ -712,6 +832,7 @@ function createMap(data){
 		
 		sendData: function(socket){
 			socket.emit("serverMapDataResponse", this.objects);
+			//socket.emit("serverMapDataResponse", this.collisionMap);
 		},
 		
 		// LOAD METHODS //
@@ -744,7 +865,8 @@ function createMap(data){
 			
 			console.log(this.objects.length + " objects parsed\ncreating collision map...");
 			
-			this.collisionMap = this.createCollisionMap();
+			//this.collisionMap = this.createCollisionMap();
+			this.collisionMap = this.objects
 			
 			console.log(this.collisionMap.length + " faces parsed, map ready.");
 		},
@@ -759,44 +881,60 @@ function createMap(data){
 			};
 		},
 		
+		createFace: function(position, rotation, size){
+			return this.createObject({
+				x: position.x,
+				y: position.y,
+				z: position.z
+			}, {
+				x: rotation.x,
+				y: rotation.y,
+				z: rotation.z
+			}, {
+				x: size.x,
+				y: size.y,
+				z: 0
+			}, 0xFFFFFF);
+		},
+		
 		// Splits cubes into different faces for collision detection
 		createCollisionMap: function(){
 			if(this.objects.length == 0) return console.log("cannot create collision map without parsed map data");
+			
+			let n = 90*Math.PI/180;
 			
 			let cmap = [];
 			
 			for(let i = 0; i < this.objects.length; i++){
 				let obj = this.objects[i];
 				
-				let nx = this.createObject({
+				let nx = this.createFace({
 					x: obj.position.x-obj.size.x/2,
 					y: obj.position.y,
 					z: obj.position.z
 				}, {
 					x: obj.rotation.x,
-					y: obj.rotation.y+(90*Math.PI/180),
+					y: obj.rotation.y+n,
 					z: obj.rotation.z
 				}, {
 					x: obj.size.z,
-					y: obj.size.y,
-					z: 0
-				}, obj.color);
+					y: obj.size.y
+				});
 				
-				let px = this.createObject({
+				let px = this.createFace({
 					x: obj.position.x+obj.size.x/2,
 					y: obj.position.y,
 					z: obj.position.z
 				}, {
 					x: obj.rotation.x,
-					y: obj.rotation.y+(90*Math.PI/180),
+					y: obj.rotation.y+n,
 					z: obj.rotation.z
 				}, {
 					x: obj.size.z,
-					y: obj.size.y,
-					z: 0
-				}, obj.color);
+					y: obj.size.y
+				});
 				
-				let nz = this.createObject({
+				let nz = this.createFace({
 					x: obj.position.x,
 					y: obj.position.y,
 					z: obj.position.z-obj.size.z/2
@@ -806,11 +944,10 @@ function createMap(data){
 					z: obj.rotation.z
 				}, {
 					x: obj.size.x,
-					y: obj.size.y,
-					z: 0
-				}, obj.color);
+					y: obj.size.y
+				});
 				
-				let pz = this.createObject({
+				let pz = this.createFace({
 					x: obj.position.x,
 					y: obj.position.y,
 					z: obj.position.z+obj.size.z/2
@@ -820,37 +957,34 @@ function createMap(data){
 					z: obj.rotation.z
 				}, {
 					x: obj.size.x,
-					y: obj.size.y,
-					z: 0
-				}, obj.color);
+					y: obj.size.y
+				});
 				
-				let ny = this.createObject({
+				let ny = this.createFace({
 					x: obj.position.x,
 					y: obj.position.y-obj.size.y/2,
 					z: obj.position.z
 				}, {
-					x: obj.rotation.x,
+					x: obj.rotation.x+n,
 					y: obj.rotation.y,
 					z: obj.rotation.z
 				}, {
 					x: obj.size.x,
-					y: 0,
-					z: obj.size.z
-				}, obj.color);
+					y: obj.size.z
+				});
 				
-				let py = this.createObject({
+				let py = this.createFace({
 					x: obj.position.x,
-					y: (Math.cos((90*Math.PI/180)-obj.rotation.x)*(obj.size.y/2))+obj.position.y+obj.size.y/2,
-					z: (Math.cos((90*Math.PI/180)-obj.rotation.x)*(obj.size.y/2))+obj.position.z
+					y: obj.position.y+obj.size.y/2,
+					z: obj.position.z
 				}, {
-					x: obj.rotation.x,
+					x: obj.rotation.x+n,
 					y: obj.rotation.y,
 					z: obj.rotation.z
 				}, {
 					x: obj.size.x,
-					y: 0,
-					z: obj.size.z
-				}, obj.color);
+					y: obj.size.z
+				});
 				
 				cmap.push(nx, px, ny, py, nz, pz);
 			}
@@ -885,6 +1019,9 @@ module.exports = {
   createServerEntity: createServerEntity,
 	createPhysicsEntity: createPhysicsEntity,
 	createSocketBoundEntity: createSocketBoundEntity,
+	createTimerEntity: createTimerEntity,
+	createStopwatchEntity: createStopwatchEntity,
+	createCountdownEntity: createCountdownEntity,
   createEnvironment: createEnvironment,
   createChat: createChat,
   createGameLoop: createGameLoop,

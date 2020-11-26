@@ -1,3 +1,3 @@
--Created a folder for maps, make root more organized
--Removed halloween content
--Added some new content (Smugbox's song, my skybox)
+-Changed color scheme
+-Added three new server entity types: stopwatch, countdown, and timer
+-You can now send a GET request to "/online" for a nifty online list (also check out "/up")

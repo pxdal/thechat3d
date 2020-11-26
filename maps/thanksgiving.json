@@ -1,5 +1,5 @@
 {
-	"name": "Ordinary Map",
+	"name": "Thanksgiving Map",
 	"objects": [{
 		"position": {
 			"x": 0,
@@ -16,7 +16,7 @@
 			"y": 1,
 			"z": 20
 		},
-		"color": "0x19abb0",
+		"color": "0x751908",
 		"texture": ""
 	}, {
 		"position": {
@@ -34,7 +34,7 @@
 			"y": 2,
 			"z": 3
 		},
-		"color": "0x3ef1f7",
+		"color": "0xff7b00",
 		"texture": ""
 	}, {
 		"position": {
@@ -52,7 +52,7 @@
 			"y": 1,
 			"z": 4
 		},
-		"color": "0x3ef1f7",
+		"color": "0xff7b00",
 		"texture": ""
 	}, {
 		"position": {
@@ -70,7 +70,7 @@
 			"y": 1,
 			"z": 2 
 		},
-		"color": "0x3ef1f7",
+		"color": "0xff7b00",
 		"texture": ""
 	}, {
 		"position": {
@@ -88,7 +88,7 @@
 			"y": 1,
 			"z": 2
 		},
-		"color": "0x3ef1f7",
+		"color": "0xff7b00",
 		"texture": ""
 	}, {
 		"position": {
@@ -106,7 +106,7 @@
 			"y": 1,
 			"z": 2
 		},
-		"color": "0x3ef1f7",
+		"color": "0xff7b00",
 		"texture": ""
 	}, {
 		"position": {
@@ -124,7 +124,7 @@
 			"y": 1,
 			"z": 2
 		},
-		"color": "0x3ef1f7",
+		"color": "0xff7b00",
 		"texture": ""
 	}, {
 		"position": {
@@ -142,7 +142,7 @@
 			"y": 1,
 			"z": 2
 		},
-		"color": "0x3ef1f7",
+		"color": "0xff7b00",
 		"texture": ""
 	}],
 	"entities": []

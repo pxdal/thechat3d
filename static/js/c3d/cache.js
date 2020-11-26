@@ -63,51 +63,46 @@ function createModelCache(){
 			this.cacheModelLoop(files, 0, callback);
 		},
 		
-		cacheModelLoop: function(files, index, callback){
+		cacheModelLoop: function(files, index, callback){	
+			let file = files[index];
+			
 			this.loader.setPath(this.path);
-				
-			this.loader.load( files[index], (object) => {
-				this.mcache[ files[index].replace(".", "").replace("obj", "") ] = object;
-				
-				if(index+1 !== files.length){ 
+			
+			this.loader.load( file, (object) => {
+				this.mcache[ file.replace(".", "").replace("obj", "") ] = object;
+					
+				if(index+1 !== files.length){
 					this.cacheModelLoop(files, index+1, callback);
 				} else {
 					callback();
 				}
 			});
-				
-			/*this.mtlLoader.load( "obj.mtl" , (materials) => {
+			
+			/*let file = files[index];
+			
+			this.mtlLoader.setPath(this.path.replace("models", "textures") + file.replace(".obj", "" + "/"));
+			
+			console.log(this.path.replace("models", "textures") + file.replace(".obj", ""));	
+			
+			this.mtlLoader.load("obj.mtl", function(materials){
 				materials.preload();
-				
-				let loader = new OBJLoader();
-				
-				loader.setMaterials(materials);
-				
-				loader.setPath(this.path);
-				loader.load(files[index], (object) => {
-					this.mcache[ files[index].replace(".", "").replace("obj", "") ] = object;
-					
-					if(index+1 !== files.length){ 
-						this.cacheModelLoop(files, index+1, callback);
-					} else {
-						callback();
-					}
-				});
 				
 				this.loader.setMaterials(materials);
 				
 				this.loader.setPath(this.path);
 				
-				this.loader.load( files[index], (object) => {
-					this.mcache[ files[index].replace(".", "").replace("obj", "") ] = object;
+				this.loader.load( file, function(object){
+					console.log(object.children);
+		
+					this.mcache[ file.replace(".", "").replace("obj", "") ] = object;
 					
-					if(index+1 !== files.length){ 
+					if(index+1 !== files.length){
 						this.cacheModelLoop(files, index+1, callback);
 					} else {
 						callback();
 					}
-				});
-			}, () => {}, (error) => {console.log(error);});*/
+				}.bind(this));
+			}.bind(this));*/
 		},
 		
 		load: function(name){

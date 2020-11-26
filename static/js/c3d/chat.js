@@ -83,8 +83,6 @@ function createChat(socket){
 			
 			let content = "[" + username + "]: " + message;
 			
-			console.log(color);
-			
 			messageElement.style = "color: #" + color;
 			messageElement.appendChild( document.createTextNode( content ) );
 

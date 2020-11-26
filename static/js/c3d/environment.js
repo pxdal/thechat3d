@@ -153,7 +153,13 @@ function createEnvironment(socket){
 				objMesh.position.y = position.y;
 				objMesh.position.z = position.z;
 				
-				objMesh.rotation.set(rotation.x, rotation.y, rotation.z, "XYZ");
+				let ax = new Vector3(1, 0, 0);
+				let ay = new Vector3(0, 1, 0);
+				let az = new Vector3(0, 0, 1);
+				
+				objMesh.rotateOnWorldAxis(ax, rotation.x);
+				objMesh.rotateOnWorldAxis(ay, rotation.y);
+				objMesh.rotateOnWorldAxis(az, rotation.z);
 				
 				this.scene.add( objMesh );
 			}	

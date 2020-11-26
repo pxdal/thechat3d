@@ -6,6 +6,7 @@ const http = require("http");
 const express = require("express");
 const socket = require("socket.io");
 const fs = require("fs");
+const flatted = require("flatted");
 const c3ds = require("./c3ds"); //"chat 3d server" module
 
 // globals
@@ -16,7 +17,7 @@ const io = socket(server);
 let sockets = []; //stores sockets
 sockets.pull = pull; //TODO this is stupid
 
-let port = 8080; //set to 80 for public
+let port = 80; //set to 80 for public
 
 // main
 
@@ -28,7 +29,7 @@ let environment = c3ds.createEnvironment("testEnvironment"); //I should probably
 let chat = c3ds.createChat();
 let map = c3ds.createMap();
 
-map.loadDataFromFile("maps/ordinary.json");
+map.loadDataFromFile("maps/thanksgiving.json");
 
 environment.pushMap(map);
 
@@ -43,6 +44,12 @@ chat.pushUser(theChatBot);
 // test entities
 let logan = c3ds.createPhysicsEntity({x: 8.5, y: 0.1, z: 8.5}, {x: -90*Math.PI/180, y: 315*Math.PI/180, z: -90*Math.PI/180}, {x: 1.0, y: 1.0, z: 1.5}, environment.generateID(), randomColor(), "cannon", false, "null");
 logan.gravity = 0;
+
+let cd = c3ds.createCountdownEntity({x: 0, y: 0, z: 0}, {x: 0, y: 0, z: 0}, {x: 0, y: 0, z: 0}, environment.generateID(), new Date(2020, 10, 26, 12, 0, 0));
+console.log("Event scheduled for: " + cd.date.toString());
+cd.onCountdownEnd = function(){
+	console.log("nidhuiajsiojdoad");
+};
 
 environment.pushServerEntity(logan);
 
@@ -319,7 +326,10 @@ function disconnect(reason, socket){
 }
 
 // when client is ready
-function clientReady(socket){
+function clientReady(socket){		
+	// Send map data
+	environment.map.sendData(socket);
+	
 	// Send the client the server entities (excluding itself)
 	environment.sendEntities(socket);
 	
@@ -331,9 +341,6 @@ function clientReady(socket){
 	environment.pushServerEntity(clientEntity);
 	
 	chat.getUserBySocket(socket).color = chat.toHex(environment.getColor(socket));
-		
-	// Send map data
-	environment.map.sendData(socket);
 }
 
 // when a client sends a username
@@ -353,6 +360,20 @@ function initServer(){
     res.sendFile(path.join(__dirname, "index.html"));
   });
   
+	app.get("/up", (req, res) => {
+		res.send("if you are reading this, the server is up");
+	});
+	
+	app.get("/online", (req, res) => {
+		console.log(req._parsedUrl.query);
+		
+		let list = JSON.stringify({
+			online: onlineUsers()
+		});
+		
+		res.send(list);
+	});
+	
   server.listen(port, '0.0.0.0', () => {
     console.log("server open, listening");
   });
@@ -428,6 +449,8 @@ function initClientEntity(socket){
 	}
 	
 	let clientEntity = c3ds.createSocketBoundEntity(randomCoords(16, 0, 16), randomCoords(0, Math.PI*2, 0), {x: 1, y: 1, z: 1}, environment.generateID(), randomColor(), model, socket, true, face); //create a new entity for the client
+	
+	clientEntity.gravity = gravity;
 	
 	while(clientEntity.checkMapCollisions(environment.map.objects)){
 		clientEntity.position = randomCoords(16, 0, 16);
@@ -552,6 +575,43 @@ function createGhost(position, rotation){
 	
 	return ghost;
 }
+
+function onlineUsers(){
+	let list = [];
+	
+	for(let i = 0; i < chat.users.length; i++){
+		let u = chat.users[i];
+		let e = environment.getEntityBySocket(u.socket);
+		
+		let uname = u.username == undefined ? "This socket has no bound user" : "[" + u.username + "]";
+		let id = e.id == undefined ? "This user has no bound entity" : e.id;
+		
+		list.push({
+			username: uname,
+			id: id
+		});
+	}
+	
+	return list;
+}
+
+//https://stackoverflow.com/a/31557814/7381705
+function simpleStringify (object){
+	let simpleObject = {};
+	for (let prop in object ){
+		if(!object.hasOwnProperty(prop)){
+			continue;
+		}
+		if(typeof(object[prop]) == 'object'){
+			continue;
+		}
+		if(typeof(object[prop]) == 'function'){
+			continue;
+		}
+		simpleObject[prop] = object[prop];
+	}
+	return JSON.stringify(simpleObject); // returns cleaned up JSON
+};
 
 // combine array of strings by space
 function combine(parameters){

@@ -19,7 +19,7 @@ function createEntity(id){
 		
 		//Takes in cache values
 		cache: function(material, model, size, face){
-			this.material = new MeshBasicMaterial({color: material});
+			this.material = new MeshPhongMaterial({color: material});
 			
 			this.size = size;
 			
@@ -59,8 +59,9 @@ function createEntity(id){
 			this.geometry = new BoxGeometry(this.size.x, this.size.y, this.size.z);
 			
 			if(model == null){
-				this.mesh = new Mesh( this.geometry, materials );
+				this.mesh = new Mesh( this.geometry, this.material );
 				this.hitbox = this.mesh.clone();
+				console.log(this.mesh);
 			} else {
 				let mat = new MeshBasicMaterial({color: material, transparent: true, opacity: 0.5});
 				this.hitbox = new Mesh( this.geometry, mat);
@@ -86,9 +87,9 @@ function createEntity(id){
 			this.position = new Vector3(position.x, position.y, position.z);
 			this.rotation = new Euler(0, 0, 0, "YXZ");
 			
-			this.rotation.x = rotation.x+this.modelRotation.x;
-			this.rotation.y = rotation.y+this.modelRotation.y;
-			this.rotation.z = rotation.z+this.modelRotation.z;
+			this.rotation.x = rotation.x;
+			this.rotation.y = rotation.y;
+			this.rotation.z = rotation.z;
 			
 			if(this.mesh){
 				this.mesh.position.setX(position.x+this.modelPosition.x);
