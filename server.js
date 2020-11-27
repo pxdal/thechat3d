@@ -17,12 +17,13 @@ const io = socket(server);
 let sockets = []; //stores sockets
 sockets.pull = pull; //TODO this is stupid
 
-let port = 80; //set to 80 for public
+let port = 8080; //set to 80 for public
 
 // main
 
 // constants
 const yborder = -25;
+const posZero = {x: 0, y: 0, z: 0};
 
 // environment (+map)
 let environment = c3ds.createEnvironment("testEnvironment"); //I should probably remove the name there's no point
@@ -312,6 +313,8 @@ function disconnect(reason, socket){
 	
 	let user = chat.getUserBySocket(socket);
 	
+	chat.pullUser(user);
+	
 	if(user !== null){
 		chat.createMessage(theChatBot.username, theChatBot.color, "User [" + user.username + "] has foolishly left The Chat 3D.", sockets);
 		console.log("User [" + user.username + "] has left.");
@@ -576,8 +579,13 @@ function onlineUsers(){
 		let u = chat.users[i];
 		let e = environment.getEntityBySocket(u.socket);
 		
-		let uname = !u.username || u == null ? "This socket has no bound user" : "[" + u.username + "]";
-		let id = !e.id || e == null ? "This user has no bound entity" : e.id;
+		let uname, id;
+		if(u !== null){
+			uname = !u.username ? "This socket has no bound user" : "[" + u.username + "]";
+		}
+		if(e !== null){
+			id = !e.id ? "This user has no bound entity" : e.id;
+		}
 		
 		list.push({
 			username: uname,
