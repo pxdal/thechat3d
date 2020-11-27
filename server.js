@@ -576,8 +576,8 @@ function onlineUsers(){
 		let u = chat.users[i];
 		let e = environment.getEntityBySocket(u.socket);
 		
-		let uname = !u.username || u.username == null ? "This socket has no bound user" : "[" + u.username + "]";
-		let id = !e.id || e.id == null ? "This user has no bound entity" : e.id;
+		let uname = !u.username || u == null ? "This socket has no bound user" : "[" + u.username + "]";
+		let id = !e.id || e == null ? "This user has no bound entity" : e.id;
 		
 		list.push({
 			username: uname,
