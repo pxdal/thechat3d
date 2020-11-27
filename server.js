@@ -17,7 +17,7 @@ const io = socket(server);
 let sockets = []; //stores sockets
 sockets.pull = pull; //TODO this is stupid
 
-let port = 8080; //set to 80 for public
+let port = 80; //set to 80 for public
 
 // main
 
