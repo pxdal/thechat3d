@@ -37,7 +37,7 @@ function createEnvironment(name){
     clientInputResponse: function(input, socket){
     	let mode = "jump"; //modes: jump (jumps like normal), flight: applies constant up/down force (is affected by gravity)
     	let entity = this.getEntityBySocket(socket);
-    	let speed = 0.01;
+    	let speed = 0.0125;
     	let rotSpeed = 0.04;
     	let jumpForce = 0.15;
     	let sensitivity = 100;
@@ -137,7 +137,7 @@ function createEnvironment(name){
 				let entity = this.serverEntities[i];
 				
 				if(entity.type == 1 || entity.type == 2){
-					if(entity.speedcap) entity.force(-entity.velocity.x/10, 0, -entity.velocity.z/10);
+					if(entity.speedcap) entity.force(-entity.velocity.x/7.5, 0, -entity.velocity.z/7.5);
 					entity.update();
 				}
 			}

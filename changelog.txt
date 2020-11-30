@@ -1,3 +1,5 @@
--Changed color scheme
--Added three new server entity types: stopwatch, countdown, and timer
--You can now send a GET request to "/online" for a nifty online list (also check out "/up")
+-Added .glb model support (haven't tested .gltf)
+-Model position and rotation improved
+-Added three new model properties, invertX, invertY, invertZ, to invert rotation on broken models
+-cache.load now returns clone of model, allows multiple to be used
+-Increased speed decrease rate by 25%

@@ -36,20 +36,19 @@ let textures = ["smiley.png", "stonks.png", "space.jpg", "ahh.png", "smugbox.png
 let halloweenTextures = ["stolen_skybox.png", "spoky.png", "boo.png", "jujucat.png"];
 
 let textureCache = createTextureCache();
-let modelCache = createModelCache();
+let objModelCache = createObjModelCache();
+let gltfModelCache = createGLTFModelCache();
 
 // load textures
 textureCache.setPath("static/media/textures/ordinary/");
 textureCache.cache(textures);
 
-textureCache.setPath("static/media/textures/halloween_event/");
-textureCache.cache(halloweenTextures);
-
 // load models
-let models = ["cannon.obj", "smugbox.obj", "spoon.obj"];
+let objModels = ["testobj.obj"];
+let gltfModels = ["cannon.glb", "smugbox.glb", "testglb.glb"];
 
-modelCache.setPath("static/media/models/ordinary/");
-modelCache.cache(models, modelLoad);
+objModelCache.setPath("static/media/models/ordinary/");
+objModelCache.cache(objModels, objModelLoad);
 
 // main
 let gameLoop = createGameLoop((parameters) => {
@@ -98,24 +97,71 @@ let gameLoop = createGameLoop((parameters) => {
 
 
 // methods
-function modelLoad(){
-	modelCache.load("cannon").scale.set(0.05, 0.05, 0.05);
-	modelCache.load("smugbox").scale.set(0.04, 0.04, 0.04);
-	
-	modelCache.load("cannon").modelPosition = {
-		x: 0.45,
+function gltfModelLoad(){
+	gltfModelCache.loadRef("testglb").modelPosition = {
+		x: -0.25,
 		y: 0,
-		z: 0.3
+		z: 0.6
+	};
+
+	gltfModelCache.loadRef("testglb").modelScale = {
+		x: 0.035,
+		y: 0.035,
+		z: 0.035
 	};
 	
-	modelCache.load("smugbox").modelRotation = {
-		x: -1.5708,
+	gltfModelCache.loadRef("cannon").modelRotation = {
+		x: 0,
+		y: 0,
+		z: 0
+	};
+	
+	gltfModelCache.loadRef("cannon").modelScale = {
+		x: 0.05,
+		y: 0.05,
+		z: 0.05
+	};
+	
+	gltfModelCache.loadRef("smugbox").modelPosition = {
+		x: 0,
 		y: 0,
 		z: 0,
 	};
 	
-	// init
+	gltfModelCache.loadRef("smugbox").modelRotation = {
+		x: 0,
+		y: Math.PI,
+		z: 0
+	};
+	
+	gltfModelCache.loadRef("smugbox").modelScale = {
+		x: 0.044,
+		y: 0.044,
+		z: 0.044
+	};
+	
+	gltfModelCache.loadRef("smugbox").invertX = true;
 	init();
+}
+
+function objModelLoad(){
+	//objModelCache.load("cannon").scale.set(0.05, 0.05, 0.05);
+	//objModelCache.load("smugbox").scale.set(0.04, 0.04, 0.04);
+	
+	/*objModelCache.load("cannon").modelPosition = {
+		x: 0.45,
+		y: 0,
+		z: 0.3
+	};*/
+	
+	/*objModelCache.load("smugbox").modelRotation = {
+		x: -1.5708,
+		y: 0,
+		z: 0,
+	}*/
+	
+	gltfModelCache.setPath("static/media/models/ordinary/");
+	gltfModelCache.cache(gltfModels, gltfModelLoad);
 }
 
 function init(){
@@ -217,14 +263,21 @@ function clientEntityIDResponse(id){
 	gameLoop.running = true;
 }
 
-// bind event listeners
+function findModel(model){
+	if(objModelCache.search(model)){
+		return objModelCache.load(model);
+	} else if (gltfModelCache.search(model)){
+		return gltfModelCache.load(model);
+	}
+	return null;
+}
 
 //socket
 function bindSocketEvents(){
 	socket.on("serverPromptError", serverPromptError);
 	socket.on("serverEntityIDResponse", environment.serverEntityIDResponse.bind(environment)); //bind environment so "this" calls aren't screwed
 	socket.on("serverEntityCacheResponse", (cache, id) => {
-		environment.serverEntityCacheResponse(cache, id, cache.face == "null" ? false : textureCache.load(cache.face), cache.model == "null" ? null : modelCache.load(cache.model));
+		environment.serverEntityCacheResponse(cache, id, cache.face == "null" ? false : textureCache.load(cache.face), cache.model == "null" ? null : findModel(cache.model));
 	});
 	socket.on("serverEntityDynamicResponse", environment.serverEntityDynamicResponse.bind(environment));
 	socket.on("serverEntityPull", environment.serverEntityPull.bind(environment));

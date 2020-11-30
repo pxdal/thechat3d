@@ -165,7 +165,7 @@ function createEnvironment(socket){
 			}	
 			
 			let ambience = new AmbientLight(0x404040, 0.8);
-			let light = new DirectionalLight(0xffffff, 0.5);
+			let light = new DirectionalLight(0xffffff, 0.6);
 
 			light.position.x = -0.3;
 			

@@ -30,7 +30,7 @@ let environment = c3ds.createEnvironment("testEnvironment"); //I should probably
 let chat = c3ds.createChat();
 let map = c3ds.createMap();
 
-map.loadDataFromFile("maps/thanksgiving.json");
+map.loadDataFromFile("maps/ordinary.json");
 
 environment.pushMap(map);
 
@@ -42,8 +42,11 @@ let theChatBot = {
 chat.pushUser(theChatBot);
 
 // test entities
-let logan = c3ds.createPhysicsEntity({x: 8.5, y: 0.1, z: 8.5}, {x: -90*Math.PI/180, y: 315*Math.PI/180, z: -90*Math.PI/180}, {x: 1.0, y: 1.0, z: 1.5}, environment.generateID(), randomColor(), "cannon", false, "null");
+let logan = c3ds.createPhysicsEntity({x: 8.5, y: 0.1, z: 8.5}, {x: 0, y: 225*Math.PI/180, z: 0}, {x: 1.0, y: 1.0, z: 1.5}, environment.generateID(), randomColor(), "cannon", false, "null");
 logan.gravity = 0;
+
+let testglb = c3ds.createPhysicsEntity({x: 0, y: 7, z: 0}, posZero, {x: 1.0, y: 1.0, z: 1.0}, environment.generateID(), randomColor(), "testglb", true, "null");
+//{x: -90*Math.PI/180, y: 315*Math.PI/180, z: -90*Math.PI/180}
 
 environment.pushServerEntity(logan);
 
@@ -61,7 +64,7 @@ let gameLoop = c3ds.createGameLoop(65, () => {
 	environment.requestInputAll();
 
 	// update entities
-	environment.update(yborder);
+	environment.update(yborder);	
 	
 	//increase frame
 	f++;
@@ -313,9 +316,9 @@ function disconnect(reason, socket){
 	
 	let user = chat.getUserBySocket(socket);
 	
-	chat.pullUser(user);
-	
 	if(user !== null){
+		chat.pullUser(user);
+		
 		chat.createMessage(theChatBot.username, theChatBot.color, "User [" + user.username + "] has foolishly left The Chat 3D.", sockets);
 		console.log("User [" + user.username + "] has left.");
 	}
@@ -420,7 +423,7 @@ function zeroes(hex){
 function randomCoords(mx, my, mz){
 	return {
 		x: Math.floor(Math.random() * (mx+1)) - mx/2,
-		y: 0.75,//Math.floor(Math.random() * (my+1)) - my/2,
+		y: 2,//Math.floor(Math.random() * (my+1)) - my/2,
 		z: Math.floor(Math.random() * (mz+1)) - mz/2,
 	};
 }
@@ -440,8 +443,8 @@ function initClientEntity(socket){
 	let model = "null";
 	
 	if(user.username.toLowerCase() == "smugbox" || user.username.toLowerCase() == "ryan"){
-		face = "smugbox";
-		//model = "smugbox";
+		//face = "smugbox";
+		model = "smugbox";
 	}
 	
 	let clientEntity = c3ds.createSocketBoundEntity(randomCoords(16, 0, 16), randomCoords(0, Math.PI*2, 0), {x: 1, y: 1, z: 1}, environment.generateID(), randomColor(), model, socket, true, face); //create a new entity for the client

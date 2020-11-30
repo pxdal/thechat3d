@@ -4,10 +4,16 @@
 // Creates an empty entity, with the exception of it's id
 function createEntity(id){
 	return {
-		position: null,
-		rotation: null,
+		position: new Vector3(0, 0, 0),
+		rotation: new Euler(0, 0, 0, "YXZ"),
+		oldRotation: {x: 0, y: 0, z: 0},
 		modelPosition: {x: 0, y: 0, z: 0},
 		modelRotation: {x: 0, y: 0, z: 0},
+		axis: {
+			x: new Vector3(1, 0, 0),
+			y: new Vector3(0, 1, 0),
+			z: new Vector3(0, 0, 1)
+		},
 		size: null,
 		id: id,
 		material: null,
@@ -19,7 +25,7 @@ function createEntity(id){
 		
 		//Takes in cache values
 		cache: function(material, model, size, face){
-			this.material = new MeshPhongMaterial({color: material});
+			this.material = new MeshBasicMaterial({color: material});
 			
 			this.size = size;
 			
@@ -45,8 +51,6 @@ function createEntity(id){
 				faceMaterial = this.material;
 			}
 			
-			//let faceMaterial = this.material;
-			
 			let materials = [
 				this.material,
 				this.material,
@@ -58,14 +62,12 @@ function createEntity(id){
 			
 			this.geometry = new BoxGeometry(this.size.x, this.size.y, this.size.z);
 			
+			let hitboxMat = new MeshBasicMaterial({color: material, transparent: true, opacity: 0.3});
+			this.hitbox = new Mesh( this.geometry, hitboxMat);
+			
 			if(model == null){
-				this.mesh = new Mesh( this.geometry, this.material );
-				this.hitbox = this.mesh.clone();
-				console.log(this.mesh);
+				this.mesh = new Mesh( this.geometry, materials );
 			} else {
-				let mat = new MeshBasicMaterial({color: material, transparent: true, opacity: 0.5});
-				this.hitbox = new Mesh( this.geometry, mat);
-				
 				if(model.modelPosition){
 					this.modelPosition.x = model.modelPosition.x;
 					this.modelPosition.y = model.modelPosition.y;
@@ -77,31 +79,47 @@ function createEntity(id){
 					this.modelRotation.y = model.modelRotation.y;
 					this.modelRotation.z = model.modelRotation.z;
 				}
+
+				if(model.modelScale){
+					model.scale.set(model.modelScale.x, model.modelScale.y, model.modelScale.z);
+				}
 				
-				this.mesh = model;
+				this.model = model;
+				this.mesh = this.model;
 			}
 		},
 		
 		//Takes in dynamic values
 		dynamic: function(position, rotation){
-			this.position = new Vector3(position.x, position.y, position.z);
-			this.rotation = new Euler(0, 0, 0, "YXZ");
+			this.position.x = position.x;
+			this.position.y = position.y;
+			this.position.z = position.z;
 			
-			this.rotation.x = rotation.x;
-			this.rotation.y = rotation.y;
-			this.rotation.z = rotation.z;
+			this.oldRotation.x = this.rotation.x;
+			this.oldRotation.y = this.rotation.y;
+			this.oldRotation.z = this.rotation.z;
 			
-			if(this.mesh){
-				this.mesh.position.setX(position.x+this.modelPosition.x);
-				this.mesh.position.setY(position.y+this.modelPosition.y);
-				this.mesh.position.setZ(position.z+this.modelPosition.z);
-				
-				this.hitbox.position.setX(position.x);
-				this.hitbox.position.setY(position.y);
-				this.hitbox.position.setZ(position.z);
+			let _360 = Math.PI*2;
+			
+			let invertX = this.mesh.invertX ? _360 : rotation.x*2; //set to rotation*2 bc it will be decreased by rotation, effectively making it either invert rotation or rotation
+			let invertY = this.mesh.invertY ? _360 : rotation.y*2;
+			let invertZ = this.mesh.invertZ ? _360 : rotation.z*2;
+			
+			this.rotation.x = invertX-rotation.x+this.modelRotation.x;
+			this.rotation.y = invertY-rotation.y+this.modelRotation.y;
+			this.rotation.z = invertZ-rotation.z+this.modelRotation.z;
+			
+			
+			if(this.mesh){				
+				this.mesh.position.setX(this.position.x+this.modelPosition.x);
+				this.mesh.position.setY(this.position.y+this.modelPosition.y);
+				this.mesh.position.setZ(this.position.z+this.modelPosition.z);
 				
 				this.mesh.setRotationFromEuler(this.rotation);
-				this.hitbox.setRotationFromEuler(this.rotation);
+				
+				this.hitbox.position.setX(this.position.x);
+				this.hitbox.position.setY(this.position.y);
+				this.hitbox.position.setZ(this.position.z);
 			}
 		},
 		
@@ -147,32 +165,20 @@ function clientEntity(entity, socket, camera){
 		socket: socket,
 		input: [],
 		camera: camera,
+		cameraRotation: new Euler(0, 0, 0, "YXZ"),
 		
 		material: undefined, //undefine these values because we won't need them (because we don't need to render self)
 		geometry: undefined,
 		
 		//Takes in dynamic values
 		dynamic: function(position, rotation, cameraRotation){
-			this.position = new Vector3(position.x, position.y, position.z);
-			this.rotation = new Euler(0, 0, 0, "YXZ");
-			
-			this.rotation.x = rotation.x;
-			this.rotation.y = rotation.y;
-			this.rotation.z = rotation.z;
-			
-			this.cameraRotation = new Euler(0, 0, 0, "YXZ");
-			
+			this.position.x = position.x;
+			this.position.y = position.y;
+			this.position.z = position.z;
+
 			this.cameraRotation.x = cameraRotation.x;
 			this.cameraRotation.y = cameraRotation.y;
 			this.cameraRotation.z = cameraRotation.z;
-
-			if(this.mesh){
-				this.mesh.position.setX(position.x);
-				this.mesh.position.setY(position.y);
-				this.mesh.position.setZ(position.z);
-
-				this.mesh.setRotationFromEuler(this.rotation);
-			}
 		},
 		
 		setCamera: function(){
