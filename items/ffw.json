@@ -1,0 +1,12 @@
+{
+	"name": "Festive Fingerwarmers",
+	"usekey": 7,
+	"useinterval": 12,
+	"model": "ffw",
+	"hud": {
+		"usekeystring": "Mouse1",
+		"path": "static/media/hud/ffw/",
+		"neutral": "glovesneutral.png",
+		"use": ["glovesleftpunch.png", "glovesrightpunch.png"]
+	}
+}

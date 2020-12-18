@@ -8,12 +8,17 @@ function createEnvironment(name){
     name: name, //optional name, more decorational than anything
     serverEntities: [], //all entities in the scene
     map: null, // map data for environment
-    
+    delta: 0, //millisecond difference between frames
+		expected: 0, //expected millisecond difference between frames
+		
     // REQUEST HANDLE METHODS //
     
     //Callback for "serverEntityCacheRequest" event, which returns entity values for the client to cache
     serverEntityCacheRequest: function(socket, id){
       let entity = this.getEntityByID(id);
+			
+			if(entity == null) return;
+
       let cache = entity.cache();
       
       socket.emit("serverEntityCacheResponse", cache, id);
@@ -26,21 +31,29 @@ function createEnvironment(name){
       if(entity == null){
       	return null;
       }
+			
       let dynamic = entity.dynamic();
       
 			if(!dynamic || dynamic == null) return;
 			
-      socket.emit("serverEntityDynamicResponse", dynamic, id);
+      socket.emit("serverEntityDynamicResponse", dynamic, id, this.delta);
     },
 
     // Callback for clientInputRequest
     clientInputResponse: function(input, socket){
     	let mode = "jump"; //modes: jump (jumps like normal), flight: applies constant up/down force (is affected by gravity)
-    	let entity = this.getEntityBySocket(socket);
-    	let speed = 0.0125;
-    	let rotSpeed = 0.04;
-    	let jumpForce = 0.15;
-    	let sensitivity = 100;
+			
+			let d = this.delta/this.expected;
+			
+			let entity = this.getEntityBySocket(socket);
+    	let speed = 0.0666666666666666667*d; // 0.0125
+    	let rotSpeed = 0.04*d; // 0.04
+    	let jumpForce = mode == "jump" ? 0.5 : 0.01; //0.15 0.275
+    	let sensitivity = 115/d; //100
+			
+			if(mode == "flight"){
+				entity.force(0, -entity.gravity, 0);
+			}
 			
 			if(input[6]){
 				if(entity.rotation.x > Math.PI/2 || entity.rotation.x < -Math.PI/2){
@@ -94,6 +107,10 @@ function createEnvironment(name){
     			entity.force(0, -jumpForce, 0);
     		}
     	}
+			
+			for(let item of entity.inventory){
+				item.check(input);
+			}
     },
     
     
@@ -118,7 +135,7 @@ function createEnvironment(name){
 		
 		// updates every entity's position
 		update: function(yborder){
-			// TODO this has to be in two seperate loops because of how collisions work, it's unintuitive and should be fixed
+			// TODO this has to be in two seperate loops because of how collisions work, it's unintuitive and should be fixed	
 			for(let i = 0; i < this.serverEntities.length; i++){
 				let entity = this.serverEntities[i];
 				
@@ -136,11 +153,51 @@ function createEnvironment(name){
 			for(let i = 0; i < this.serverEntities.length; i++){
 				let entity = this.serverEntities[i];
 				
+				if(entity.tracking){
+					let e = this.getEntityByID(entity.tracking);
+					
+					if(e == null){ 
+						entity.tracking = false;
+					} else {
+						entity.lookAt(e, entity.trackingMode);
+					}
+				}
+				
+				if(entity.type == 1 || entity.type == 2){
+					if(entity.speedcap) entity.force(-entity.velocity.x/2.5, 0, -entity.velocity.z/2.5);
+					entity.update();
+				}
+			}
+
+			/*for(let i = 0; i < this.serverEntities.length; i++){
+				let entity = this.serverEntities[i];
+				
+				//check collisions of entities				
+				entity.checkCollisions(this.serverEntities);
+				
+				//check collisions of map
+				entity.checkMapCollisions(this.map.collisionMap);
+				
+				if(entity.position.y < yborder){
+					entity.respawn();
+				}
+				
+				if(entity.tracking){
+					let e = this.getEntityByID(entity.tracking);
+					
+					if(e == null){ 
+						entity.tracking = false;
+					} else {
+						entity.lookAt(e, entity.trackingMode);
+					}
+				}
+				
 				if(entity.type == 1 || entity.type == 2){
 					if(entity.speedcap) entity.force(-entity.velocity.x/7.5, 0, -entity.velocity.z/7.5);
 					entity.update();
 				}
-			}
+				
+			}*/
 		},
 		
 		requestInputAll: function(){
@@ -153,8 +210,50 @@ function createEnvironment(name){
 			}
 		},
     
+		updateItems: function(){
+			for(let entity of this.serverEntities){
+				if(entity.inventory){
+					for(let item of entity.inventory){
+						item.update();
+					}
+				}
+			}
+		},
+		
     // UTILS //
     
+		changeMap: function(map){
+			console.log("changing map...");
+	
+			this.pushMap(map);
+			
+			for(let entity of this.serverEntities){
+				if(entity.socket) map.sendData(entity.socket);
+			}
+			
+			this.onMapChange(map);
+		},
+		
+		onMapChange: function(){},
+		
+		randomCoords: function(mx, my, mz){
+			return {
+				x: Math.floor(Math.random() * (mx+1)) - mx/2,
+				y: my,//Math.floor(Math.random() * (my+1)) - my/2,
+				z: Math.floor(Math.random() * (mz+1)) - mz/2,
+			};
+		},
+		
+		// takes an number value and changes it relative to delta
+		deltafy: function(value){
+			return value*(this.delta/this.expected);
+		},
+		
+		// inverse deltafy
+		undeltafy: function(value){
+			return value*(this.expected/this.delta);
+		},
+		
     //returns entity with the id specified
     getEntityByID: function(id){
       for(let i = 0; i < this.serverEntities.length; i++){
@@ -264,7 +363,32 @@ function createEnvironment(name){
 					entity.force(0, entity.gravity, 0);
 				}
 			}
-		}
+		},
+		
+		setGravity: function(gravity){
+			for(let i = 0; i < this.serverEntities.length; i++){
+				let entity = this.serverEntities[i];
+				
+				if(entity.changeGravity){
+					if(entity.type == 1 || entity.type == 2 ){
+						entity.gravity = gravity;
+					}
+				}
+			}
+		},
+		
+		// checks if the socket already has an entity
+		checkSocket: function(socket){
+			for(let i = 0; i < this.serverEntities.length; i++){
+				let entity = this.serverEntities[i];
+				
+				if (entity.type !== 2) continue;
+				
+				if(entity.socket == socket) return true;
+			}
+			
+			return false;
+		},
   };
 }
 
@@ -278,28 +402,10 @@ function createChat(){
 		
 		// Callback for when the chat receives a username request
 		clientUsername: function(username, color, socket, sockets){
-			if(username == null){
-				username = "";
-				for(let i = 0; i < 8; i++){
-					let c = Math.floor(Math.random()*94)+32;
-					
-					username += String.fromCharCode(c);
-				}
-			} else if(username.length < 1){
-				username = "";
-				for(let i = 0; i < 8; i++){
-					let c = Math.floor(Math.random()*94)+32;
-					
-					username += String.fromCharCode(c);
-				}
-			}
-			
-			let tcb = this.getUserByUsername("The Chat Bot");
-			
-			this.createMessage(tcb.username, tcb.color, "User [" + username + "] has joined The Chat 3D", sockets);
-			
+			if(this.checkSocket(socket)) return; // check if user already has socket
+
 			console.log("User: [" + username + "] has joined");
-			
+				
 			return this.pushUser( this.createUser(username, color, socket) );
 		},
 		
@@ -407,13 +513,25 @@ function createChat(){
 			}
 			
 			return zeroes + str;
-		}
+		},
+		
+		// checks if socket already has a user and returns true if it does, otherwise false
+		checkSocket: function(socket){
+			for(let i = 0; i < this.users.length; i++){
+				let user = this.users[i];
+				
+				if(user.socket == socket) return true;
+			}
+			
+			return false;
+		},
 	};
 }
 
 // creates a base server entity (pretty useless, mainly just used to define base values for other extensions of this class)
-function createServerEntity(position, rotation, size, id){
+function createServerEntity(environment, position, rotation, size, id){
   return {
+		environment: environment,
 		type: 0,
 		enabled: true, // whether or not the entity is enabled (will stay in serverEntities but will be invisible and won't be updated)
 		position: position,
@@ -467,13 +585,115 @@ function createServerEntity(position, rotation, size, id){
 	};
 }
 
+// creates an item entity from format
+function createItemEntity(environment, id, template){
+	let n = {
+		type: 5,
+		name: template.name,
+		settings: {
+			usekey: template.usekey,
+			useinterval: template.useinterval,
+			model: template.model,
+			hud: {
+				usekeystring: template.hud.usekeystring,
+				path: template.hud.path,
+				neutral: template.hud.neutral,
+				use: template.hud.use
+			},
+		},
+		state: "neutral",
+		physical: null, //physical form of the object, which is set when initPhysical is called
+		holder: null,//entity holding the item
+		inInventory: false,
+		lastUse: template.useinterval, //time, in frames, since last use (set to useinterval to prevent not being able to use on pickup)
+		
+		initPhysical: function(){
+			this.physical = createPhysicsEntity(this.environment, {x: 0, y: 0, z: 0}, {x: 0, y: 0, z: 0}, {x: 0.5, y: 0.5, z: 0.5}, environment.generateID(), 0xffffff, this.settings.model, true, null);
+			this.physical.item = this;
+		
+			this.physical.createTrigger(null, "onCollide", (self, obj, parameters) => {
+				if(obj.pushItem){
+					let p = obj.pushItem(self.item);
+					
+					if(p) this.environment.pullServerEntity(self);
+				}
+			});
+		},
+		
+		update: function(){
+			this.lastUse++;
+		},
+		
+		// uses item if input matches and use interval 
+		check: function(input){
+			if(input[this.settings.usekey] && this.lastUse >= this.settings.useinterval){
+				this.use();
+			}
+		},
+		
+		changeState: function(state){
+			this.state = state;
+			
+			if(!this.holder) return;
+			
+			if(this.holder.socket){
+				this.holder.socket.emit("clientItemStateChange", this.settings.hud, this.state);
+			}
+			
+		},
+		
+		use: function(){
+			this.lastUse = 0;
+			
+			this.changeState("use");
+			
+			this.onUse(this, this.holder);
+		},
+		
+		// removes item from entity's inventory and pushes physical self into environment, with the position being in front of the entity, out of it's collision range, with velocity
+		drop: function(position, velocity){
+			if(this.holder !== null){ 
+				if(position){
+					this.physical.position.x = position.x;
+					this.physical.position.y = position.y;
+					this.physical.position.z = position.z;
+				}
+				
+				this.holder.pullItem(this);
+			}
+			
+			if(velocity){
+				this.physical.force(velocity.x, velocity.y, velocity.z);
+			}
+			
+			this.environment.pushServerEntity(this.physical);
+		},
+		
+		onHolster: function(){}, //action called when item is picked up
+		onUse: function(){}, //action called when item is used
+	};
+	
+	return extend(createServerEntity(environment, template.position, template.rotation, template.size, id), n);
+}
+
+function createItemEntityFromJSON(environment, id, path){
+	console.log("Loading item from " + path + " ...");
+	
+	let data = fs.readFileSync(path);
+	
+	data = JSON.parse(data);
+	
+	return createItemEntity(environment, id, data);
+}
+
 // Create an entity that has physics
-function createPhysicsEntity(position, rotation, size, id, material, model, interactive, face){
+function createPhysicsEntity(environment, position, rotation, size, id, material, model, interactive, face){
 	let n = {
 		type: 1,
 		visible: true, //visiblity (defaults to true)
 		interactive: interactive,
-		gravity: -0.01,
+		gravity: -0.1,
+		changeGravity: true, //whether or not it can be affected by gravity
 		locked: false,
 		speedcap: true, //whether or not to apply a cap to it's velocity (looking to change this to a value in the future)
 		face: face,
@@ -487,8 +707,67 @@ function createPhysicsEntity(position, rotation, size, id, material, model, inte
 			y: 0,
 			z: 0,
 		},
+		colliding: {
+			x: false,
+			y: false,
+			z: false
+		},
 		material: material,
 		model: model,
+		tracking: false, //set id of entity and run this.lookAt
+		trackingMode: "normal",
+		inventory: [],
+		inventoryLimit: 1,
+		
+		// adds an item to the inventory
+		pushItem: function(item){
+			if(this.inventory.length < this.inventoryLimit){
+				this.inventory.push(item);
+				item.holder = this;
+			
+				this.sendItem(item);
+				
+				return true;
+			} else {
+				return false;
+			}
+		},
+		
+		pullItem: function(item){
+			this.inventory.splice(this.inventory.indexOf(item), 1);
+			
+			this.sendPullItem(item);
+			
+			item.holder = null;
+		},
+		
+		sendItem: function(item){
+			for(let entity of this.environment.serverEntities){
+				if(entity.socket){
+					entity.socket.emit("serverItemPush", item.holder.id, [item.id, item.settings.model, item.settings.hud, item.state, item.name]);
+				}
+			}
+		},
+		
+		sendItems: function(socket){
+			for(let item of this.inventory){
+				socket.emit("serverItemPush", item.holder.id, [item.id, item.settings.model, item.settings.hud, item.state]);
+			}
+		},
+		
+		sendPullItem: function(item){
+			for(let entity of this.environment.serverEntities){
+				if(entity.socket){ 
+					entity.socket.emit("serverItemPull", item.holder.id, [item.id]);
+				}
+			}
+		},
+		
+		clearInventory: function(){
+			for(let item of this.inventory){
+				this.pullItem(item);
+			}
+		},
 		
 		// sets visibility
 		setVisibility(visibility){
@@ -556,8 +835,8 @@ function createPhysicsEntity(position, rotation, size, id, material, model, inte
 				if(this.position.x - obj.position.x == 0) this.position.x -= 0.001;
 				if(this.position.z - obj.position.z == 0) this.position.z += 0.001;
 				
-				this.velocity.x -= (obj.position.x - this.position.x)/60;
-				this.velocity.z -= (obj.position.z - this.position.z)/60;
+				this.velocity.x -= (obj.position.x - this.position.x)/10;
+				this.velocity.z -= (obj.position.z - this.position.z)/10;
 			}
 			
 			this.checkTriggers("onCollide", obj);
@@ -615,25 +894,59 @@ function createPhysicsEntity(position, rotation, size, id, material, model, inte
     	//choke velocity based on axis of face
     	if(Math.abs(vertical) < verticall){
 				this.onGround = true;
+				
 				this.velocity.y = 0;
-    	} else if(horizontal < horizontall && horizontal > -horizontall){
-    		this.velocity.z = 0;
-    	} else if(horizontal > horizontall || horizontal < -horizontall){
-    		this.velocity.x = 0;
-    	}
+				
+				if(dy < 0){ 
+					this.snapTo(obj, "py");
+				} else {
+					this.snapTo(obj, "ny");
+				}
+    	} else {
+				if(horizontal > horizontall || horizontal < -horizontall){
+					this.velocity.x = 0;
+					
+					if(dx < 0){
+						this.snapTo(obj, "px");
+					} else {
+						this.snapTo(obj, "nx");
+					}
+				}
+				if(horizontal < horizontall && horizontal > -horizontall){
+					this.velocity.z = 0;
+					
+					if(dz < 0){
+						this.snapTo(obj, "pz");
+					} else {
+						this.snapTo(obj, "nz");
+					}
+				}
+			}
 			
 			this.checkTriggers("onMapCollide");
     },
+		
+		// moves self so it's perfectly aligned with one of the sides of an object
+		snapTo: function(object, side){
+			let sign = side[0] == "p" ? 1 : -1;
+			let axis = side[1];
+			
+			this.position[axis] = object.position[axis] + sign*(object.size[axis]/2) + sign*(this.size[axis]/2);
+		},
 		
 		// returns position in the next frame using oldVelocity (for checking collisions)
     nextFrame: function(){
     	return {
     		position: {
-    			x: this.position.x+this.oldVelocity.x,
-    			y: this.position.y+this.oldVelocity.y,
-    			z: this.position.z+this.oldVelocity.z,
+    			x: this.position.x+this.velocity.x,
+    			y: this.position.y+this.velocity.y,
+    			z: this.position.z+this.velocity.z,
     		},
-    		size: this.size,
+    		size: {
+					x: this.size.x,
+					y: this.size.y,
+					z: this.size.z
+				},
     	};
     },
 		
@@ -660,13 +973,13 @@ function createPhysicsEntity(position, rotation, size, id, material, model, inte
 			let colliding = false;
 			
     	this.onGround = false;
-    
+			
     	for(let i = 0; i < objects.length; i++){
     		let obj = objects[i];
     		
     		if(obj.id == this.id) continue;
     		
-    		if( rrCol(this.nextFrame(), obj) ){
+				if( rrCol(this.nextFrame(), obj)){
     			colliding = true;
 					this.onMapCollide(obj);
     		}
@@ -676,34 +989,50 @@ function createPhysicsEntity(position, rotation, size, id, material, model, inte
     },
 		
 		respawn: function(){
-    	this.checkTriggers("respawn");
+			let map = this.environment.map;
 			
 			this.velocity.x = 0;
+			this.velocity.y = 0;
     	this.velocity.z = 0;
-    	this.position.x = 0.1;
-    	this.position.y = 50;
-    	this.position.z = -0.1;
+    	
+			if(!map.spawn){
+				this.position = this.environment.randomCoords(16, 2, 16);
+			} else if(map.spawn.type == "field"){
+				this.position = this.environment.randomCoords(map.spawn.x, map.spawn.y, map.spawn.z);
+			} else if(map.spawn.type == "exact"){
+				this.position.x = map.spawn.x;
+				this.position.y = map.spawn.y;
+				this.position.z = map.spawn.z;
+			}
+			
+			this.checkTriggers("respawn");
     },
-		lookAt: function(entity){
+		
+		lookAt: function(entity, mode){
 			let dx = this.position.x - entity.position.x;
 			let dz = this.position.z - entity.position.z;
 			
-			this.rotation.y = Math.atan2(dx, dz);
+			if(mode == "cinematic"){
+				this.rotation.y += this.rotation.y-Math.atan2(dx, dz);
+			} else if(mode == "normal" || !mode){
+				this.rotation.y = Math.atan2(dx, dz);
+			}
 		},
 	};
 	
-	return extend(createServerEntity(position, rotation, size, id), n);
+	return extend(createServerEntity(environment, position, rotation, size, id), n);
 }
 
 // Create an entity controlled by a socket
-function createSocketBoundEntity(position, rotation, size, id, material, geometry, socket, interactive, face){
+function createSocketBoundEntity(environment, position, rotation, size, id, material, geometry, socket, interactive, face){
 	let n = {
 		type: 2,
 		socket: socket,
 		cameraRotation: {
 			x: rotation.x,
 			y: rotation.y,
-			z: rotation.z
+			z: rotation.z,
+			override: false
 		},
 		
 		//Returns entity values that the server expects to change often (dynamic values)
@@ -711,11 +1040,37 @@ function createSocketBoundEntity(position, rotation, size, id, material, geometr
       let entity = this;
       
       //note that the vectors are turned into x, y, z values because it's not as big, so the server can send them faster
-      return {
-      	position: entity.position,
-      	rotation: entity.rotation,
-				cameraRotation: entity.cameraRotation,
+      let data = {
+      	position: {
+					x: entity.position.x,
+					y: entity.position.y,
+					z: entity.position.z,
+					override: entity.position.override
+				},
+      	rotation: {
+					x: entity.rotation.x,
+					y: entity.rotation.y,
+					z: entity.rotation.z,
+					override: entity.rotation.override
+				},
+				cameraRotation: {
+					x: entity.cameraRotation.x,
+					y: entity.cameraRotation.y,
+					z: entity.cameraRotation.z,
+					override: entity.cameraRotation.override
+				},
+				velocity: {
+					x: entity.velocity.x,
+					y: entity.velocity.y,
+					z: entity.velocity.z
+				}
       };
+			
+			this.position.override = false;
+			this.rotation.override = false;
+			this.cameraRotation.override = false;
+		
+			return data;
     },
 		
 		inputRequest: function(){	
@@ -725,11 +1080,11 @@ function createSocketBoundEntity(position, rotation, size, id, material, geometr
 		},
 	};
 	
-	return extend(createPhysicsEntity(position, rotation, size, id, material, geometry, interactive, face), n);
+	return extend(createPhysicsEntity(environment, position, rotation, size, id, material, geometry, interactive, face), n);
 }
 
 // creates a stopwatch which counts up infinitely by rate (recommended rate is 1 ms for precision)
-function createStopwatchEntity(position, rotation, size, id, rate){
+function createStopwatchEntity(environment, position, rotation, size, id, rate){
 	let n = {
 		type: 3,
 		time: 0,
@@ -750,24 +1105,27 @@ function createStopwatchEntity(position, rotation, size, id, rate){
 		}
 	};
 	
-	return extend(createServerEntity(position, rotation, size, id), n);
+	return extend(createServerEntity(environment, position, rotation, size, id), n);
 }
 
 // counts down from amount to 0 (sadly only by milliseconds, rate cannot be set unlike stopwatch)
-function createTimerEntity(position, rotation, size, id, amount){
+function createTimerEntity(environment, position, rotation, size, id, amount, parameters){
 	let n = {
 		type: 4,
 		timeout: null,
 		amount: amount,
+		parameters: parameters,
+		started: 0, //time in Date form when it was started
 		
 		onTimerEnd: function(){}, //function which will be called when timer hits zero, can be set by programmer
 		
 		start: function(){
 			this.time = this.amount;
+			this.started = new Date();
 			
 			this.timeout = setTimeout(() => {
-				this.onTimerEnd();
 				clearTimeout(this.timeout);
+				this.onTimerEnd(this.parameters);
 			}, this.amount);
 		},
 		
@@ -776,11 +1134,11 @@ function createTimerEntity(position, rotation, size, id, amount){
 		}
 	};
 	
-	return extend(createServerEntity(position, rotation, size, id), n);
+	return extend(createServerEntity(environment, position, rotation, size, id), n);
 }
 
 // counts up in seconds until date is reached, good for consistent countdowns for events
-function createCountdownEntity(position, rotation, size, id, date){
+function createCountdownEntity(environment, position, rotation, size, id, date){
 	let n = {
 		date: date,
 		time: 0,
@@ -813,19 +1171,42 @@ function createCountdownEntity(position, rotation, size, id, date){
 		}
 	};
 	
-	return extend(createServerEntity(position, rotation, size, id), n);
+	return extend(createServerEntity(environment, position, rotation, size, id), n);
 }
 
-function createGameLoop(fps, callback){
-	return setInterval(callback, 1000/fps);
+function createGameLoop(fps, callback, mode){
+	let l = {
+		running: false,
+		fps: fps,
+		mode: mode,
+		
+		callback: callback,
+		
+		loopFunction: function(l){
+			if(l.running){
+				l.callback();
+			}
+			if(l.mode == "strict"){
+				setTimeout(l.loopFunction, 1000/l.fps, l);
+			}
+		},
+		
+		loop: null
+	};
+	
+	l.loop = setInterval(l.loopFunction, 1000/l.fps, l);
+	
+	return l;
 }
 
 // Creates a map for the environment, can either be fed data at start or given with loadData functions
 function createMap(data){
 	return {
+		name: "",
 		data: data == undefined ? false : data,
 		parsed: null,
 		objects: [],
+		spawn: {},
 		collisionMap: [],
 		
 		// SEND METHODS //
@@ -861,12 +1242,15 @@ function createMap(data){
 			
 			this.parsed = JSON.parse(this.data);
 			
+			this.name = this.parsed.name;
+			
 			this.objects = this.parsed.objects;
+			this.spawn = this.parsed.spawn;
 			
 			console.log(this.objects.length + " objects parsed\ncreating collision map...");
 			
 			//this.collisionMap = this.createCollisionMap();
-			this.collisionMap = this.objects
+			this.collisionMap = this.objects;
 			
 			console.log(this.collisionMap.length + " faces parsed, map ready.");
 		},
@@ -1022,8 +1406,11 @@ module.exports = {
 	createTimerEntity: createTimerEntity,
 	createStopwatchEntity: createStopwatchEntity,
 	createCountdownEntity: createCountdownEntity,
+	createItemEntity: createItemEntity,
+	createItemEntityFromJSON: createItemEntityFromJSON,
   createEnvironment: createEnvironment,
   createChat: createChat,
   createGameLoop: createGameLoop,
   createMap: createMap,
+	rrCol: rrCol
 };

@@ -26,5 +26,6 @@ let Scene = THREE.Scene,
     Mesh = THREE.Mesh,
     AmbientLight = THREE.AmbientLight,
     DirectionalLight = THREE.DirectionalLight,
+		HemisphereLight = THREE.HemisphereLight,
     width = window.innerWidth,
     height = window.innerHeight;

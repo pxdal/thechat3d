@@ -31,6 +31,7 @@ function createChat(socket){
 			this.domElement.style.left = "0px";
 			this.domElement.style.width = "270px";
 			this.domElement.style.height = "200px";
+			this.domElement.style["background-color"] = "rgba(0, 0, 0, 0.1)";
 			this.messageBoxElement.style.overflow = "auto";
 			this.messageBoxElement.style.width = this.domElement.style.width;
 			this.messageBoxElement.style.height = "100%";

@@ -92,8 +92,6 @@ function createObjModelCache(){
 			
 			this.mtlLoader.setPath(this.path.replace("models", "textures") + file.replace(".obj", "" + "/"));
 			
-			console.log(this.path.replace("models", "textures") + file.replace(".obj", ""));	
-			
 			this.mtlLoader.load("obj.mtl", (materials) => {
 				materials.preload();
 				
@@ -131,6 +129,12 @@ function createObjModelCache(){
 			n.invertX = this.mcache[name].invertX;
 			n.invertY = this.mcache[name].invertY;
 			n.invertZ = this.mcache[name].invertZ;
+			
+			if(n.modelPosition) n.position.set(n.modelPosition.x, n.modelPosition.y, n.modelPosition.z);
+			if(n.modelRotation) n.setRotationFromEuler(new Euler(n.modelRotation.x, n.modelRotation.y, n.modelRotation.z, "YXZ"));
+			if(n.modelScale) n.scale.set(n.modelScale.x, n.modelScale.y, n.modelScale.z);
+			
+			console.log(n);
 			
 			return n;
 		},
@@ -178,7 +182,7 @@ function createGLTFModelCache(){
 		},
 		
 		// loop for cache
-		cacheModelLoop: function(files, index, callback){
+		cacheModelLoop: function(files, index, callback){	
 			let file = files[index];
 			
 			this.loader.setPath(this.path);
@@ -205,6 +209,10 @@ function createGLTFModelCache(){
 			n.invertX = this.mcache[name].invertX;
 			n.invertY = this.mcache[name].invertY;
 			n.invertZ = this.mcache[name].invertZ;
+
+			if(n.modelPosition) n.position.set(n.modelPosition.x, n.modelPosition.y, n.modelPosition.z);
+			if(n.modelRotation) n.setRotationFromEuler(new Euler(n.modelRotation.x, n.modelRotation.y, n.modelRotation.z, "YXZ"));
+			if(n.modelScale) n.scale.set(n.modelScale.x, n.modelScale.y, n.modelScale.z);
 			
 			return n;
 		},

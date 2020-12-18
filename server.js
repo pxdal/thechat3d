@@ -1,4 +1,4 @@
-// cunk
+// merry christmas
 
 // load modules
 const path = require("path");
@@ -26,13 +26,37 @@ const yborder = -25;
 const posZero = {x: 0, y: 0, z: 0};
 
 // environment (+map)
-let environment = c3ds.createEnvironment("testEnvironment"); //I should probably remove the name there's no point
+let environment = c3ds.createEnvironment("main"); //I should probably remove the name there's no point
 let chat = c3ds.createChat();
 let map = c3ds.createMap();
+let kothMap = c3ds.createMap();
+let christmasMap = c3ds.createMap();
 
 map.loadDataFromFile("maps/ordinary.json");
+kothMap.loadDataFromFile("maps/koth.json");
+christmasMap.loadDataFromFile("maps/christmas.json");
 
-environment.pushMap(map);
+let maps = {
+	map: map,
+	koth: kothMap,
+	christmas: christmasMap
+};
+
+environment.changeMap(maps.christmas);
+
+environment.onMapChange = function(map){
+	for(let entity of this.serverEntities){
+		if(map.name == "koth" && entity.socket){
+			let ffw = createFFW();
+			
+			entity.pushItem(ffw);
+		} else {
+			entity.clearInventory();
+		}
+	
+		entity.respawn();
+	}
+};
 
 // the chat bot
 let theChatBot = {
@@ -41,35 +65,101 @@ let theChatBot = {
 };
 chat.pushUser(theChatBot);
 
-// test entities
-let logan = c3ds.createPhysicsEntity({x: 8.5, y: 0.1, z: 8.5}, {x: 0, y: 225*Math.PI/180, z: 0}, {x: 1.0, y: 1.0, z: 1.5}, environment.generateID(), randomColor(), "cannon", false, "null");
+// entities
+let logan = c3ds.createPhysicsEntity(environment, {x: 8.5, y: 0.1, z: 8.5}, {x: 0, y: 225*Math.PI/180, z: 0}, {x: 1.0, y: 1.0, z: 1.5}, environment.generateID(), randomColor(), "cannon", false, "null");
 logan.gravity = 0;
+logan.changeGravity = false;
+//environment.pushServerEntity(logan);
 
-let testglb = c3ds.createPhysicsEntity({x: 0, y: 7, z: 0}, posZero, {x: 1.0, y: 1.0, z: 1.0}, environment.generateID(), randomColor(), "testglb", true, "null");
-//{x: -90*Math.PI/180, y: 315*Math.PI/180, z: -90*Math.PI/180}
+// fingerwarmers
+let ffw = createFFW();
+ffw.physical.position = {
+	x: 0.1,
+	y: 2,
+	z: 0.1
+};
+environment.pushServerEntity(ffw.physical);
 
-environment.pushServerEntity(logan);
+// map switch timer
+let mapSwitch = c3ds.createTimerEntity(environment, posZero, posZero, posZero, environment.generateID(), 300000, [chat, theChatBot, sockets]);
+mapSwitch.onTimerEnd = function(p){
+	let current = this.environment.map;
+	let chat = p[0];
+	let tcb = p[1];
+	let sockets = p[2];
+	
+	if(current.name == "christmas"){
+		chat.createMessage(tcb.username, tcb.color, "KOTH begins now!  Everyone has Festive Fingerwarmers, last one standing has bragging rights!  Ends in 1 minute.", sockets);
+		environment.changeMap(maps.koth);
+		this.amount = 30000;
+		this.start();
+	} else if(current.name == "koth"){
+		let winners = [];
+		
+		for(let entity of this.environment.serverEntities){
+			if(entity.socket){
+				let plat = current.createObject({
+					x: 0,
+					y: 1.5,
+					z: 0
+				}, {
+					x: 0,
+					y: 0,
+					z: 0
+				}, {
+					x: 6,
+					y: 3,
+					z: 6
+				});
+				
+				if(c3ds.rrCol(entity, plat)){
+					winners.push(chat.getUserBySocket(entity.socket).username);
+				}
+			}
+		}
+		
+		let message = "Users: " + winners + " were on top.";
+		if(winners.length == 1){
+			message = "User: " + winners + " was on top.";
+		} else if(winners.length == 0){
+			message = "No one was on top.";
+		}
+		
+		chat.createMessage(tcb.username, tcb.color, "KOTH is over!  " + message + "  KOTH begins again in 5 minutes!", sockets);
+		environment.changeMap(maps.christmas);
+		
+		this.amount = 300000;
+		this.start();
+	}
+}
+mapSwitch.start();
 
-// game loop (65fps)
+// game loop (60fps)
 
-let gravity = -0.01;
+let gravity = -0.1;
 
 let f = 0;
+let d = Date.now();
 
-let gameLoop = c3ds.createGameLoop(65, () => {	
-	// gravity
+let gameLoop = c3ds.createGameLoop(20, () => {	
+	// set delta
+	environment.delta = Date.now() - d;
+	d = Date.now();
+	
 	environment.gravity();
+		
+	// update entities
+	environment.update(yborder);	
+	environment.updateItems();
 	
 	// input
 	environment.requestInputAll();
-
-	// update entities
-	environment.update(yborder);	
 	
 	//increase frame
 	f++;
 });
-
+environment.expected = 1000/60;
+//gameLoop.running = true;
 
 // command loop (2fps)
 
@@ -83,6 +173,7 @@ stream.on('data', (chunk) => {
 });
 
 stream.on('end', () => {
+	contentOld = content;
 	ready = true;
 });
 
@@ -165,7 +256,7 @@ let commandLoop = c3ds.createGameLoop(2, () => {
 			case "cp": {
 				let entity = environment.getEntityBySocket(client);
 				
-				if(entity == null) return;
+				if(entity == null) break;
 				
 				let x = parameters[0] == "~" ? entity.position.x : parseFloat(parameters[0], 10);
 				let y = parameters[1] == "~" ? entity.position.y : parseFloat(parameters[1], 10);
@@ -184,7 +275,7 @@ let commandLoop = c3ds.createGameLoop(2, () => {
 			case "cv": {
 				let entity = environment.getEntityBySocket(client);
 				
-				if(entity == null) return;
+				if(entity == null) break;
 				
 				let x = parameters[0] == "~" ? entity.velocity.x : parseFloat(parameters[0], 10);
 				let y = parameters[1] == "~" ? entity.velocity.y : parseFloat(parameters[1], 10);
@@ -214,28 +305,58 @@ let commandLoop = c3ds.createGameLoop(2, () => {
 			case "onlineList":
 			case "ol": {
 				console.log("Online users:");
-				
-				/*for(let i = 0; i < sockets.length; i++){
-					let s = sockets[i];
-					let u = chat.getUserBySocket(s);
-					let e = environment.getEntityBySocket(s);
-					
-					if(u == null || e == null){
-						console.log("A socket is connected but doesn't have a username or bound entity");
-						continue;
-					}
-					
-					console.log("Username: [" + u.username + "], Entity ID: " + e.id);
-				}*/
-				
+
 				for(let i = 0; i < chat.users.length; i++){
 					let u = chat.users[i];
 					let e = environment.getEntityBySocket(u.socket);
 					
+					e = e == null ? undefined : e;
+					
 					let uname = u.username == undefined ? "This socket has no bound user" : "[" + u.username + "]";
-					let id = e.id == undefined ? "This user has no bound entity" : e.id;
+					let id = e == null || e.id == undefined? "This user has no bound entity" : e.id;
 					
 					console.log("Username " + uname + ", Entity ID: " + id);
+				}
+				
+				break;
+			}
+			case "setProperty":
+			case "sp": {
+				// syntax: sp [property] [type] <value> (set [property] of [type] to <value>)
+				// or: sp [property] (console.log [property])
+				// type can be: number (num, int, float), boolean (bool), or string.  object and array not supported
+				
+				
+				let prop = parameters[0];
+				let type = parameters[1];
+				let value = parameters[2];
+				
+				let entity = environment.getEntityBySocket(client);
+				
+				if(entity == null) return;
+				
+				if(!type || !value){
+					console.log(entity[prop]);
+				} else {
+					if(type == "number" || type == "num" || type == "int" || type == "float"){
+						value = parseFloat(value, 10);
+					} else if(type == "boolean" || type == "bool"){
+						if(value == "true"){
+							value = true;
+						} else {
+							value == false;
+						}
+					}
+					
+					entity[prop] = value;
+				}
+				
+				break;
+			}
+			case "changeMap":
+			case "cm": {
+				if(maps[parameters[0]]){
+					environment.changeMap(maps[parameters[0]]);
 				}
 				
 				break;
@@ -261,10 +382,11 @@ let commandLoop = c3ds.createGameLoop(2, () => {
 	}
 
 });
-
+commandLoop.running = true;
 
 // socket
 io.on("connection", socket => {
+	gameLoop.running = true;
   console.log("New socket connected"); //acknowledge existence of socket
 	sockets.push(socket);
 
@@ -307,12 +429,24 @@ initServer();
 //on disconnect
 function disconnect(reason, socket){
 	console.log("socket disconnect");
-		
+	
 	let client = environment.getEntityBySocket.bind(environment)(socket);
 	
-	environment.pullServerEntity(client); //if the client intentionally disconnected, pull entity
+	if(client !== null){
+		if(client.inventory){
+			for(let item of client.inventory){
+				item.drop({x: client.position.x, y: client.position.y, z: client.position.z});
+			}
+		}
+		
+		environment.pullServerEntity(client); //if the client intentionally disconnected, pull entity
+	}
 	
 	sockets.pull(socket);
+	
+	if(sockets.length == 0){
+		gameLoop.running = false;
+	}
 	
 	let user = chat.getUserBySocket(socket);
 	
@@ -326,6 +460,8 @@ function disconnect(reason, socket){
 
 // when client is ready
 function clientReady(socket){		
+	if(environment.checkSocket(socket)) return;
+	
 	// Send map data
 	environment.map.sendData(socket);
 	
@@ -340,11 +476,37 @@ function clientReady(socket){
 	environment.pushServerEntity(clientEntity);
 	
 	chat.getUserBySocket(socket).color = chat.toHex(environment.getColor(socket));
+
+	for(let entity of environment.serverEntities){
+		entity.sendItems(socket);
+	}
 }
 
 // when a client sends a username
 function clientUsername(username, socket, sockets){
 	let color = environment.getColor(socket);
+	
+	let tcb = chat.getUserByUsername("The Chat Bot");
+	
+	let time = Math.ceil((mapSwitch.amount - (new Date() - mapSwitch.started))/1000/60);
+	
+	if(username == null){
+		username = "";
+		for(let i = 0; i < 8; i++){
+			let c = Math.floor(Math.random()*94)+32;
+			
+			username += String.fromCharCode(c);
+		}
+	} else if(username.length < 1){
+		username = "";
+		for(let i = 0; i < 8; i++){
+			let c = Math.floor(Math.random()*94)+32;
+			
+			username += String.fromCharCode(c);
+		}
+	}
+			
+	chat.createMessage(tcb.username, tcb.color, "User [" + username + "] has joined The Chat 3D.  Map changes in " + time + " minutes!", sockets);
 	
 	chat.clientUsername(username, color, socket, sockets);
 }
@@ -447,13 +609,15 @@ function initClientEntity(socket){
 		model = "smugbox";
 	}
 	
-	let clientEntity = c3ds.createSocketBoundEntity(randomCoords(16, 0, 16), randomCoords(0, Math.PI*2, 0), {x: 1, y: 1, z: 1}, environment.generateID(), randomColor(), model, socket, true, face); //create a new entity for the client
+	let clientEntity = c3ds.createSocketBoundEntity(environment, randomCoords(16, 0, 16), randomCoords(0, Math.PI*2, 0), {x: 1, y: 1, z: 1}, environment.generateID(), randomColor(), model, socket, true, face); //create a new entity for the client
 	
 	clientEntity.gravity = gravity;
 	
-	while(clientEntity.checkMapCollisions(environment.map.objects)){
-		clientEntity.position = randomCoords(16, 0, 16);
-	}
+	clientEntity.respawn();
+	
+	clientEntity.position.override = true;
+	clientEntity.rotation.override = true;
+	clientEntity.cameraRotation.override = true;
 	
 	clientEntity.createTrigger(null, "onCollide", (self, out, parameters) => {
 		if(out.id == logan.id){
@@ -505,14 +669,55 @@ function initClientEntity(socket){
 	clientEntity.createTrigger(null, "respawn", (self, out, parameters) => {
 		self.interactive = true;
 		self.speedcap = true;
-		self.velocity.y = -1;
 	});
-	
+		
 	return clientEntity;
 }
 
+function createFFW(){
+	let ffw = c3ds.createItemEntityFromJSON(environment, environment.generateID(), "items/ffw.json");
+	
+	ffw.initPhysical();
+	
+	ffw.onUse = function(self, holder){
+		//a bit quick-fixey, but create a "map object" to see if we should punch an entity.  this is useful because it fits right into entity collision functions without having to be rendered.
+		let punch = environment.map.createObject({
+			x: (Math.sin(holder.rotation.y)*(holder.size.x/2)*-2)+holder.position.x,
+			y: holder.position.y,
+			z: (Math.cos(holder.rotation.y)*(holder.size.z/2)*-2)+holder.position.z
+		}, {
+			x: 0,
+			y: 0,
+			z: 0
+		}, {
+			x: 0.01,
+			y: 0.01,
+			z: 0.01
+		});
+		
+		for(let entity of holder.environment.serverEntities){
+			if(entity.id == holder.id) continue;
+			
+			if(c3ds.rrCol(punch, entity)){
+				entity.force(-2.15*Math.sin(holder.rotation.y), 0, -2.15*Math.cos(holder.rotation.y));
+			}
+		}
+		
+		setTimeout(() => {
+			self.changeState("neutral");
+		}, 500);
+	};
+	
+	ffw.createTrigger(null, "respawn", (self, out) => {
+		self.position = randomCoords(16, 0, 16);
+		self.position.y = 2;
+	});
+	
+	return ffw;
+}
+
 function createGhost(position, rotation){
-	let ghost = c3ds.createPhysicsEntity(position, rotation, {x: 1, y: 1, z: 1}, environment.generateID(), 0xe6d1be, "null", true, "boo");
+	let ghost = c3ds.createPhysicsEntity(environment, position, rotation, {x: 1, y: 1, z: 1}, environment.generateID(), 0xe6d1be, "null", true, "boo");
 	ghost.gravity = -0.0005;
 	ghost.launching = false;
 	

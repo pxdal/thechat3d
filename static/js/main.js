@@ -3,11 +3,25 @@
 // socket
 const socket = io();
 
-// whether or not to display debug info
-let debug = false; //defaults to false
-
 // globals
-let environment, chat, camera, listener, audioLoader, music, renderer, stats, clock, pog;
+let environment, chat, camera, listener, audioLoader, music, renderer, stats, clock, pog, HUDManager;
+
+// settings
+let debug = false; //display debugging info?
+
+// settings aliases (makes some things easier)
+function togglePrediction(){
+	environment.clientEntity.prediction = !environment.clientEntity.prediction;
+}
+function toggleSmoothing(){
+	environment.smoothing = !environment.smoothing;
+}
+function setCorrection(correction){
+	environment.clientEntity.correction = correction;
+}
+function setLimit(limit){
+	environment.clientEntity.limit = limit;
+}
 
 // camera
 let fov = 75;
@@ -45,12 +59,22 @@ textureCache.cache(textures);
 
 // load models
 let objModels = ["testobj.obj"];
-let gltfModels = ["cannon.glb", "smugbox.glb", "testglb.glb"];
+let gltfModels = ["cannon.glb", "smugbox.glb", "testglb.glb", "ffw.glb", "thecone.glb"];
 
 objModelCache.setPath("static/media/models/ordinary/");
 objModelCache.cache(objModels, objModelLoad);
 
 // main
+let clientLoop = createGameLoop((parameters) => {
+	if(document.activeElement !== chat.inputElement && document.pointerLockElement === renderer.domElement){
+		environment.clientEntity.bindInput(inputListener.createInput(["KeyW", "KeyA", "KeyS", "KeyD", "Space", "ShiftLeft", "MouseDelta", "MouseDown"]));
+	
+		inputListener.calculateDelta(0.5);
+	}
+	
+	environment.updateClient();
+}, 60, []);
+
 let gameLoop = createGameLoop((parameters) => {
 	environment.checkScene(); //adds entities to scene TODO make this not stupid
   
@@ -58,7 +82,7 @@ let gameLoop = createGameLoop((parameters) => {
 	
 	if( inputListener.keyPressed() ){
 		if(!music.source){
-			audioLoader.load( "static/media/sounds/c3d-dumbshit.ogg", function(buffer){
+			audioLoader.load( "static/media/sounds/mixkit-christmas-jazz-503.ogg" , function(buffer){
 				music.setBuffer(buffer);
 				music.setLoop(true);
 				music.setVolume( 0.125 );
@@ -69,14 +93,21 @@ let gameLoop = createGameLoop((parameters) => {
 		chat.handleInput(inputListener.keys);
 	}
 	
-	if(document.activeElement !== chat.inputElement && document.pointerLockElement === renderer.domElement){
-		environment.clientEntity.bindInput(inputListener.createInput(["KeyW", "KeyA", "KeyS", "KeyD", "Space", "ShiftLeft", "MouseDelta"]));
-	
-		inputListener.calculateDelta(0.5);
+	if(!environment.clientEntity.prediction){
+		clientLoop.running = false;
+		
+		if(document.activeElement !== chat.inputElement && document.pointerLockElement === renderer.domElement){
+			environment.clientEntity.bindInput(inputListener.createInput(["KeyW", "KeyA", "KeyS", "KeyD", "Space", "ShiftLeft", "MouseDelta", "MouseDown"]));
+		
+			inputListener.calculateDelta(0.5);
+		}
+		
+		// fetch dynamic entity positions
+		environment.updateClient();
+	} else {
+		clientLoop.running = true;
 	}
 	
-	// fetch dynamic entity positions
-	environment.updateClient();
 	environment.update();
 	
 	// debug
@@ -87,33 +118,60 @@ let gameLoop = createGameLoop((parameters) => {
 	}
 	
 	if(environment.clientEntity.position !== null){
-		try {
-			chat.updateDebug(environment.clientEntity.position.x, environment.clientEntity.position.y, environment.clientEntity.position.z, environment.clientEntity.rotation.x);
-		} catch ( e ){
-			console.log(environment.clientEntity.position.y);
-		}
+		chat.updateDebug(environment.clientEntity.position.x, environment.clientEntity.position.y, environment.clientEntity.position.z, environment.clientEntity.rotation.x);
 	}
-}, 65, []);
+}, 20, []);
+
 
 
 // methods
 function gltfModelLoad(){
+	gltfModelCache.loadRef("thecone").modelPosition = {
+		x: 0,
+		y: 0.45,
+		z: -0.05
+	};
+	
+	gltfModelCache.loadRef("thecone").modelScale = {
+		x: 0.075,
+		y: 0.065,
+		z: 0.075
+	};
+	
+	gltfModelCache.loadRef("ffw").modelPosition = {
+		x: 0,
+		y: -0.35,
+		z: 0
+	};
+	
+	gltfModelCache.loadRef("ffw").modelRotation = {
+		x: 0,
+		y: Math.PI/2,
+		z: 0
+	};
+	
+	gltfModelCache.loadRef("ffw").modelScale = {
+		x: 0.01,
+		y: 0.01,
+		z: 0.01
+	};
+	
 	gltfModelCache.loadRef("testglb").modelPosition = {
 		x: -0.25,
 		y: 0,
 		z: 0.6
-	};
-
-	gltfModelCache.loadRef("testglb").modelScale = {
-		x: 0.035,
-		y: 0.035,
-		z: 0.035
 	};
 	
 	gltfModelCache.loadRef("cannon").modelRotation = {
 		x: 0,
 		y: 0,
 		z: 0
+	};
+	
+	gltfModelCache.loadRef("testglb").modelScale = {
+		x: 0.035,
+		y: 0.035,
+		z: 0.035
 	};
 	
 	gltfModelCache.loadRef("cannon").modelScale = {
@@ -194,6 +252,10 @@ function init(){
 	// renderer
 	renderer = initRenderer();
 
+	// HUD
+	HUDManager = createHUDManager(document.createElement("div"));
+	HUDManager.init();
+	
 	// input
 	inputListener.addCallback("click", (e) => {
 		renderer.domElement.requestPointerLock = renderer.domElement.requestPointerLock || renderer.domElement.mozRequestPointerLock;
@@ -246,6 +308,8 @@ function resize(){
 	//update camera
 	camera.aspect = width/height;
 	camera.updateProjectionMatrix();
+	
+	HUDManager.onResize();
 }
 
 function unload(){
@@ -257,10 +321,11 @@ function serverPromptError(error){
 }
 
 function clientEntityIDResponse(id){
-	environment.clientEntityIDResponse(id, camera);
+	environment.clientEntityIDResponse(id, camera, HUDManager);
 	clock.start();
 	render();
 	gameLoop.running = true;
+	clientLoop.running = true;
 }
 
 function findModel(model){
@@ -277,14 +342,19 @@ function bindSocketEvents(){
 	socket.on("serverPromptError", serverPromptError);
 	socket.on("serverEntityIDResponse", environment.serverEntityIDResponse.bind(environment)); //bind environment so "this" calls aren't screwed
 	socket.on("serverEntityCacheResponse", (cache, id) => {
-		environment.serverEntityCacheResponse(cache, id, cache.face == "null" ? false : textureCache.load(cache.face), cache.model == "null" ? null : findModel(cache.model));
+		environment.serverEntityCacheResponse(cache, id, cache.face == "null" ? false : textureCache.load(cache.face), cache.model == "null" ? null : findModel(cache.model), findModel("thecone"));
 	});
 	socket.on("serverEntityDynamicResponse", environment.serverEntityDynamicResponse.bind(environment));
 	socket.on("serverEntityPull", environment.serverEntityPull.bind(environment));
 	socket.on("serverNewMessage", chat.serverNewMessage.bind(chat));
 	socket.on("serverMapDataResponse", environment.serverMapDataResponse.bind(environment));
+	socket.on("serverItemPush", (id, item) => {
+		environment.serverItemPush(id, findModel(item[1]), item);
+	});
+	socket.on("serverItemPull", environment.serverItemPull.bind(environment));
 	socket.on("clientEntityIDResponse", clientEntityIDResponse);
 	socket.on("clientInputRequest", environment.clientInputRequest.bind(environment));
+	socket.on("clientItemStateChange", environment.clientItemStateChange.bind(environment));
 }
 
 //window

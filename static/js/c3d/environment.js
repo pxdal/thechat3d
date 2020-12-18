@@ -21,7 +21,8 @@ function createEnvironment(socket){
 		socket: socket, //socket
 		clientEntity: null, //the clientEntity which this client controls
 		map: null,
-    
+		mapObjects: [],
+    smoothing: true,
     
 		// FETCH METHODS //
 		
@@ -50,8 +51,10 @@ function createEnvironment(socket){
 		// RESPONSE METHODS //
 		
 		// Callback for when an entity bound to the client is sent
-		clientEntityIDResponse: function(id, camera){
-			this.clientEntity = clientEntity(createEntity(id), socket, camera);
+		clientEntityIDResponse: function(id, camera, HUDManager){
+			this.clientEntity = clientEntity(createEntity(id), socket, camera, HUDManager);
+			
+			this.fetchEntityDynamic(this.clientEntity.id);
 			
 			this.clientEntity.setCamera();
 		},
@@ -65,17 +68,17 @@ function createEnvironment(socket){
 		},
 		
 		// Callback for the serverEntityCacheResponse event, stores the values 
-		serverEntityCacheResponse: function(cache, id, texture, model){
+		serverEntityCacheResponse: function(cache, id, texture, model, thecone){
 			let entity = this.getEntityByID(id);
 		  
-			entity.cache(cache.material, model, cache.size, texture);
+			entity.cache(cache.material, model, cache.size, texture, thecone);
 		},
     
 		// Callback for the serverEntityDynamicResponse event, stores values
-		serverEntityDynamicResponse: function(dynamic, id){
+		serverEntityDynamicResponse: function(dynamic, id, delta){
 			// bypass for the fact that this.clientEntity isn't a part of this.entities
 			if(id == this.clientEntity.id){
-				this.clientEntity.dynamic(dynamic.position, dynamic.rotation, dynamic.cameraRotation);
+				this.clientEntity.dynamic(dynamic.position, dynamic.rotation, dynamic.velocity, dynamic.cameraRotation, delta, this.smoothing);
 				return;
 			}
 			
@@ -90,6 +93,47 @@ function createEnvironment(socket){
 			this.renderMap();
 		},
 		
+		// Callback for serverItemPush
+		serverItemPush: function(id, model, item){
+			if(id == this.clientEntity.id) {
+				this.clientEntity.addItem(item[2], item[3]);
+				
+				chat.serverNewMessage({username: "The Chat Bot (to You)", color: "e31e31", message: "You got the " + item[4] + "!  Press " + item[2].usekeystring + " to use it."});
+				
+				return;
+			}
+				
+			let entity = this.getEntityByID(id);
+			
+			if(entity == null) return;
+			
+			model.position.setZ(-0.75);
+			
+			model.cid = item[0];
+			
+			entity.addModel(model);
+		},
+		
+		serverItemPull(id, item){
+			if(id == this.clientEntity.id){
+				this.clientEntity.pullItem();
+				
+				return;
+			}
+			
+			let entity = this.getEntityByID(id);
+			
+			for(let child of entity.model.children){
+				if(child.cid){
+					if(child.cid == item[0]) entity.model.remove(child);
+				}
+			}
+		},
+		
+		clientItemStateChange: function(hud, state){
+			this.clientEntity.addItem(hud, state);
+		},
+		
 		// UPDATE METHODS (called every frame) //
 		
 		// Updates the positions of entities
@@ -102,7 +146,13 @@ function createEnvironment(socket){
 		},
     
 		// updates position of client (bypass bc clientEntity isn't in entities)
-		updateClient: function(){
+		updateClient: function(){	
+			if(this.clientEntity.prediction){ 
+				this.clientEntity.handleInput();
+				
+				this.clientEntity.update(this.map);
+			}
+			
 			this.fetchEntityDynamic(this.clientEntity.id);
 		},
     
@@ -122,6 +172,8 @@ function createEnvironment(socket){
 
 		// MAP METHODS //
 		renderMap: function(){ //pushes map objects to scene (meant to be called once)
+			if(this.mapObjects.length > 0) this.removeMap();
+		
 			for(let i = 0; i < this.map.length; i++){
 				let object = this.map[i];
 				
@@ -161,18 +213,30 @@ function createEnvironment(socket){
 				objMesh.rotateOnWorldAxis(ay, rotation.y);
 				objMesh.rotateOnWorldAxis(az, rotation.z);
 				
+				this.mapObjects.push( objMesh );
+				
 				this.scene.add( objMesh );
 			}	
 			
 			let ambience = new AmbientLight(0x404040, 0.8);
-			let light = new DirectionalLight(0xffffff, 0.6);
-
-			light.position.x = -0.3;
+			let light = new DirectionalLight(0xffffff, 0.8);
+			//let light2 = new DirectionalLight(0xffffff, 0.8);
+			let light2 = new HemisphereLight(0xffffff, 0xffffff, 0.5);
 			
-			this.scene.add(ambience);
-			this.scene.add(light);
+			light.position.x = -0.4;
+			light2.position.z = -0;
+			
+			this.mapObjects.push(ambience, light, light2);
+			
+			this.scene.add(ambience, light, light2);
 		},
 		
+		// removes map from scene
+		removeMap: function(){
+			for(let obj of this.mapObjects){
+				this.scene.remove(obj);
+			}
+		},
     
 		// UTILS //
 		

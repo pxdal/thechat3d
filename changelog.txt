@@ -1,5 +1,47 @@
--Added .glb model support (haven't tested .gltf)
--Model position and rotation improved
--Added three new model properties, invertX, invertY, invertZ, to invert rotation on broken models
--cache.load now returns clone of model, allows multiple to be used
--Increased speed decrease rate by 25%
+SET PORT TO 80 AND DELETE THIS LINE BEFORE COMMIT
+
+Changelog (4.0.0):
+
+Server Changes:
+	Environment:
+		-Environment now have delta property which stores milliseconds between ticks
+		-Game loop now has a "running" property which determines whether or not it is ticking
+			-Game loop now idles when no clients are online
+		-Map can now be changed while server is running
+			
+		-New command "setProperty" (or "sp"), can change properties of bound user's entity while the server is running
+		-New command "changeMap" (or "cm"), changes map to map name
+		
+		-Changed server tickrate from 65 to 20 for higher server performance
+		-Any text in command.txt will now be ignored on startup
+		
+	Entities:
+		-New entity type: item entities, can be held and used by physics entities
+		-Entities now have an inventory
+		
+	Misc.:
+		-Fixed bug which allows a single client to spam an incredible amount of entities by sending repeated "clientReady" messages to the server
+		-Fixed other bugs involving illegitimate client events being emitted to cause general chaos
+		-Fixed bug which caused the command loop to stop if a bad changePos command was made
+
+
+Client Changes:
+	HUD:
+		-Entities now have a HUD which currently can only have an image representing an item it's holding
+		
+	Entities:
+		-Added new entity property "tracking", can be set to the id of an entity to look at it constantly
+		-Added "snapping" collisions, now snaps entity to the object instead of stopping it
+		-Added "smoothing" to entities, makes motion appear to be higher framerate clientside (can be toggled)
+		-Added clientside prediction, which predicts where the client will be instead of waiting for the server to tell it
+		-Added correction, if clientside prediction is on this will correct the client's position (if it is misaligned) by a percentage determined by it's value (0-1)
+		
+		-Fixed bug (sort of) which caused entities to get stuck in map objects
+	
+	Misc.:
+		-Added new functions which let user change settings more quickly from developer console
+			-togglePrediction()
+			-toggleSmoothing()
+			-setCorrection(correction)
+			-setLimit(limit)
+		-Input now supports "MouseDown" and "MouseUp"
