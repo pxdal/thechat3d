@@ -1,6 +1,5 @@
 # The Chat 3D
-The sequel to the "beloved" project "The Chat", a chaotic online chat room that I created to test server-side node js scripts (https://github.com/ItsTheChickenMan/thechat).  This is the 3D interactive version, featuring the old chat you know and love, moving cubes, and broken physics.  This project is a pretty much a joke, but if you're really interested I host the server on:
-http://75.133.182.85/
+The sequel to the "beloved" project "The Chat", a chaotic online chat room that I created to test server-side node js scripts (https://github.com/ItsTheChickenMan/thechat).  This is the 3D interactive version, featuring the old chat you know and love, moving cubes, and broken physics.  This project is a pretty much a joke, but if you're really interested feel free to download it and give it a try.
 
 # Installation (for hosting)
 If you want to host this yourself, installation is pretty straightforward:
