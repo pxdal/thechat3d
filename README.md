@@ -24,4 +24,4 @@ If you want to make a server public, you'll have to do some port forwarding.  Th
 Want to use the c3d engine for your own projects?  don't.  If you want to make a serious project, use something more reliable.  If you want to make something silly or personal, just know that there's no documentation and the engine is really stupid.  There'll be a lot of unnecessary headaches.
 
 # Info
-Join the development discord server: https://discord.com/invite/KTCz4tU
+~~Join the development discord server~~ this project isn't being developed anymore, but the discord is still there if you want to chat: https://discord.com/invite/KTCz4tU
