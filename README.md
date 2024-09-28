@@ -1,4 +1,9 @@
 # The Chat 3D
+A goofy project I made back when I was really into game development in high school.  I still like gamedev, but I had this weird idea that making my own engine for everything was somehow always the best idea, and as a result I never really made any actual progress on any playable experience.  "The Chat 3D" is very good evidence of this, as in its latest state it exists as a small world where all you can do is move around as a cube and type in a basic text chat.  I did try to add some fun stuff, but generally I was too bogged down with making the engine work to focus on making a game.  At least I had the self awareness to say that it was bad in the README.
+
+I've left the original README as it was before this commit below, mostly because I think it deserves preservation.  It's certainly embarrassing in some ways, but in a way I think that the project is weirdly charming.  Even if my long term goals were fairly misguided, I will still at least fondly remember the hours I would spend programming this silly little project.  It was good exercise, if nothing else. Also, the discord invite link is dead now, sorry.
+
+# The Chat 3D
 The sequel to the "beloved" project "The Chat", a chaotic online chat room that I created to test server-side node js scripts (https://github.com/ItsTheChickenMan/thechat).  This is the 3D interactive version, featuring the old chat you know and love, moving cubes, and broken physics.  This project is a pretty much a joke, but if you're really interested feel free to download it and give it a try.
 
 # Installation (for hosting)
